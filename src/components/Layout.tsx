@@ -1,4 +1,4 @@
-import React from 'react';
+import type { ReactNode } from 'react';
 import { AppBar, Toolbar, Typography, Drawer, List, ListItemButton, ListItemIcon, ListItemText, Box } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import InputIcon from '@mui/icons-material/Input';
@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 
 const drawerWidth = 240;
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default function Layout({ children }: { children: ReactNode }) {
     const navigate = useNavigate();
     return (
         <Box sx={{ display: 'flex' }}>
