@@ -1,13 +1,25 @@
 import { useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
     const [user, setUser] = useState('');
     const [pass, setPass] = useState('');
+    const navigate = useNavigate();
 
     const submit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // TODO: llamada a /auth/login
-        console.log({ user, pass });
+        try {
+            const resp = await axios.post('/api/auth/login', {
+                username: user,
+                password: pass,
+            });
+            localStorage.setItem('token', resp.data.access_token);
+            navigate('/');
+        } catch (err) {
+            console.error(err);
+            alert('Error de autenticación');
+        }
     };
 
     return (
