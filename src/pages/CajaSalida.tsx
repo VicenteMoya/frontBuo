@@ -144,7 +144,7 @@ export default function CajaSalida() {
                 onClose={handleSnackClose}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
                 transitionDuration={{ enter: 200, exit: 150 }}
-                onExited={() => setSnackOpen(false)}
+                //onExited={() => setSnackOpen(false)}
             >
                 <Alert onClose={handleSnackClose} severity={msg?.type || 'success'}>
                     {msg?.text ?? ''}
