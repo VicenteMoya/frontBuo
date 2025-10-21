@@ -94,17 +94,6 @@ export default function CajaSalida() {
         <Box sx={{ p:2 }}>
             <Card>
                 <CardContent />
-                <Box p={2} display="grid" gridTemplateColumns="1fr 380px" gap={2}>
-                    {/* Columna izquierda: formulario existente de salida (resta stock) */}
-                    <Paper sx={{ p:2 }}>
-                        {/* ...tu UI actual para registrar SALIDA manual... */}
-                    </Paper>
-
-                    {/* Columna derecha: albaranes de VENTA pendientes */}
-                    <Suspense fallback={<Paper sx={{ p:2 }}>Cargando albaranes…</Paper>}>
-                      <PendingAlbaranesPanel type="outgoing" />
-                    </Suspense>
-                </Box>
                 <Box display="grid" gridTemplateColumns="1.8fr 0.8fr 0.8fr 1.8fr" gap={2} alignItems="center">
                     <Autocomplete
                         options={catalog}
@@ -161,6 +150,17 @@ export default function CajaSalida() {
                     {msg?.text ?? ''}
                 </Alert>
             </Snackbar>
+            <Box p={2} display="grid" gridTemplateColumns="1fr 380px" gap={2}>
+                {/* Columna izquierda: formulario existente de salida (resta stock) */}
+                <Paper sx={{ p:2 }}>
+                    {/* ...tu UI actual para registrar SALIDA manual... */}
+                </Paper>
+
+                {/* Columna derecha: albaranes de VENTA pendientes */}
+                <Suspense fallback={<Paper sx={{ p:2 }}>Cargando albaranes…</Paper>}>
+                    <PendingAlbaranesPanel type="outgoing" />
+                </Suspense>
+            </Box>
         </Box>
     );
 }

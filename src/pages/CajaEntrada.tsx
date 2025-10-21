@@ -114,17 +114,6 @@ export default function CajaEntrada() {
             <Grid item xs={12} md={8}>
                 <Card>
                     <CardContent>
-                      <Box p={2} display="grid" gridTemplateColumns="1fr 380px" gap={2}>
-                        {/* Columna izquierda: formulario existente de entrada (suma stock) */}
-                        <Paper sx={{ p:2 }}>
-                          {/* ...tu UI actual para registrar ENTRADA manual (que suma stock)... */}
-                        </Paper>
-
-                        {/* Columna derecha: albaranes de COMPRA pendientes */}
-                        <Suspense fallback={<Paper sx={{ p:2 }}>Cargando albaranes…</Paper>}>
-                          <PendingAlbaranesPanel type="incoming" />
-                        </Suspense>
-                      </Box>
                         <Box display="grid" gap={2}>
                             <Autocomplete
                                 options={productOptions}
@@ -212,6 +201,17 @@ export default function CajaEntrada() {
                     <Box mt={1} display="flex" gap={1} alignItems="center">
                         <Chip label={scale.connected ? "Conectada" : "Desconectada"} color={scale.connected ? "success" : "default"} />
                         <Chip label={`${scale.weight?.toFixed(3) || "0.000"} ${scale.unit || ""}`} />
+                    </Box>
+                    <Box p={2} display="grid" gridTemplateColumns="1fr 380px" gap={2}>
+                        {/* Columna izquierda: formulario existente de entrada (suma stock) */}
+                        <Paper sx={{ p:2 }}>
+                            {/* ...tu UI actual para registrar ENTRADA manual (que suma stock)... */}
+                        </Paper>
+
+                        {/* Columna derecha: albaranes de COMPRA pendientes */}
+                        <Suspense fallback={<Paper sx={{ p:2 }}>Cargando albaranes…</Paper>}>
+                            <PendingAlbaranesPanel type="incoming" />
+                        </Suspense>
                     </Box>
                     <Typography variant="caption">WS: {scaleWs || "manual"}</Typography>
                 </Paper>

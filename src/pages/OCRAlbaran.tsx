@@ -42,8 +42,9 @@ export default function OCRAlbaran() {
 
             nav('/ocr/review', {
                 state: {
-                    ocr: { items },                 // normalizamos el shape
-                    sourceImageName: file?.name || undefined
+                    ocr: { items: data.items },
+                    sourceImageName: file.name,
+                    albaranId: data.id,
                 }
             });
         } catch (e: any) {
