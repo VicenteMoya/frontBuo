@@ -16,7 +16,8 @@ import AddIcon from '@mui/icons-material/Add';
 import Autocomplete from '@mui/material/Autocomplete';
 import type { OcrItem, OcrResult } from '../api/types';
 import api from '../api/axios';
-import { assignOCRAlbaran } from '../api/albaranes';
+import {assignOCRAlbaran, commitOCRAlbaran} from '../api/albaranes';
+import { getSessionKey } from '../utils/sessionKey';
 
 type Product = { sku: string; name: string; unit?: string };
 const UNITS = ['unidad', 'kg', 'caja', 'litro'];
@@ -86,13 +87,18 @@ export default function OCRReview() {
         }
 
         try {
-            await assignOCRAlbaran(albaranId, { type, items: lines });
-            setSnack({ open: true, sev: 'success', msg: 'Albarán asignado. Vamos a la caja.' });
+            await commitOCRAlbaran({ type, origin: 'ocr', source_image_name: fileName, lines });
+            setSnack({ open: true, sev: 'success', msg: 'Albarán pendiente creado.' });
             setTimeout(() => nav(type === 'incoming' ? '/entrada' : '/salida'), 800);
         } catch (e: any) {
-            console.error(e);
             const detail = e?.response?.data?.detail;
-            setSnack({ open: true, sev: 'error', msg: detail ?? 'Error al asignar.' });
+            const textMsg =
+                typeof detail === 'string'
+                    ? detail
+                    : Array.isArray(detail)
+                        ? detail.join('; ')
+                        : JSON.stringify(detail);
+            setSnack({ open: true, sev: 'error', msg: textMsg });
         }
     };
 

@@ -2,6 +2,7 @@ import React, { Suspense, useEffect, useMemo, useState } from "react";
 import {Box, Button, Card, CardContent, TextField, MenuItem, Typography, Alert, Snackbar, Switch, FormControlLabel, Paper} from "@mui/material";
 import Autocomplete from "@mui/material/Autocomplete";
 import api from "../api/axios";
+import { getSessionKey } from "../utils/sessionKey";
 const PendingAlbaranesPanel = React.lazy(() => import('../components/PendingAlbaranesPanel'));
 
 type Product = { sku: string; name: string; unit?: string };
@@ -158,7 +159,7 @@ export default function CajaSalida() {
 
                 {/* Columna derecha: albaranes de VENTA pendientes */}
                 <Suspense fallback={<Paper sx={{ p:2 }}>Cargando albaranes…</Paper>}>
-                    <PendingAlbaranesPanel type="outgoing" />
+                    <PendingAlbaranesPanel type="outgoing" sessionKey={getSessionKey()}/>
                 </Suspense>
             </Box>
         </Box>

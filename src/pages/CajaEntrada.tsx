@@ -7,6 +7,7 @@ import {
 import api from "../api/axios";
 import { useScanner } from "../hooks/useScanner";
 import { useScale } from "../hooks/useScale";
+import { getSessionKey } from "../utils/sessionKey";
 const PendingAlbaranesPanel = React.lazy(() => import('../components/PendingAlbaranesPanel'));
 
 type Product = { sku: string; name: string; unit: string };
@@ -210,7 +211,7 @@ export default function CajaEntrada() {
 
                         {/* Columna derecha: albaranes de COMPRA pendientes */}
                         <Suspense fallback={<Paper sx={{ p:2 }}>Cargando albaranes…</Paper>}>
-                            <PendingAlbaranesPanel type="incoming" />
+                            <PendingAlbaranesPanel type="incoming" sessionKey={getSessionKey()}/>
                         </Suspense>
                     </Box>
                     <Typography variant="caption">WS: {scaleWs || "manual"}</Typography>

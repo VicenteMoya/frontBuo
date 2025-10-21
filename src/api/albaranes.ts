@@ -73,7 +73,7 @@ export interface AssignPayload {
     items: { sku: string; qty: number; unit: string; note?: string | null }[];
 }
 
-export async function fetchPending(type: AlbaranType): Promise<AlbaranPending[]> {
+export async function fetchPending(type: string, sessionKey: string | undefined, type: AlbaranType): Promise<AlbaranPending[]> {
     const r = await api.get(`/albaranes/pending`, {
         params: { type, session_key: getSessionKey() }   // <-- filtra por sesión
     });
@@ -109,9 +109,18 @@ export async function commitOCRAlbaran(payload: {
     return r.data;
 }
 
+// src/api/albaranes.ts
+
 export function assignOCRAlbaran(
     albaranId: number,
     payload: AssignPayload
 ) {
-    return api.patch(`/albaranes/${albaranId}/assign`, payload);
+    return api.patch(
+        `/albaranes/${albaranId}/complete`,
+        payload,
+        {
+            // acepta cualquier status entre 200 y 299, incluyendo 204
+            validateStatus: (status) => status >= 200 && status < 300
+        }
+    );
 }
