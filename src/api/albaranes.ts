@@ -46,6 +46,7 @@ function normalizeLine(raw: any): AlbaranLine {
     };
 }
 
+
 function normalizeAlbaran(raw: any): AlbaranPending {
     // El backend probablemente devuelve source_image_name y created_at
     return {
@@ -66,6 +67,12 @@ function normalizeAlbaran(raw: any): AlbaranPending {
  * Lista albaranes pendientes por tipo (incoming/outgoing).
  * GET /albaranes/pending?type=incoming|outgoing
  */
+
+export interface AssignPayload {
+    type: 'incoming' | 'outgoing';
+    items: { sku: string; qty: number; unit: string; note?: string | null }[];
+}
+
 export async function fetchPending(type: AlbaranType): Promise<AlbaranPending[]> {
     const r = await api.get(`/albaranes/pending`, {
         params: { type, session_key: getSessionKey() }   // <-- filtra por sesión
@@ -100,4 +107,11 @@ export async function commitOCRAlbaran(payload: {
 }) {
     const r = await api.post<Albaran>(`/albaranes/commit`, payload);
     return r.data;
+}
+
+export function assignOCRAlbaran(
+    albaranId: number,
+    payload: AssignPayload
+) {
+    return api.patch(`/albaranes/${albaranId}/assign`, payload);
 }

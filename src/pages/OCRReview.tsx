@@ -23,13 +23,13 @@ const UNITS = ['unidad', 'kg', 'caja', 'litro'];
 
 export default function OCRReview() {
     const { state } = useLocation() as {
-        state: { ocr: { items: OcrItem[] }; sourceImageName: string; albaranId: number };
+        state: { ocr: OcrResult; sourceImageName: string; albaranId: number };
     };
     const nav = useNavigate();
 
-    // Extract albaranId from state
     const albaranId = state?.albaranId;
-    const sourceImageName = state?.sourceImageName;
+    const initialFileName = state?.sourceImageName || '';
+    const [fileName, setFileName] = useState<string>(initialFileName);
     const [items, setItems] = useState<OcrItem[]>([]);
     const [type, setType] = useState<'incoming' | 'outgoing'>('incoming');
     const [snack, setSnack] = useState<{ open: boolean; msg: string; sev: 'success' | 'error' }>({
@@ -45,7 +45,7 @@ export default function OCRReview() {
             return;
         }
         setItems(
-            (ocr.items || []).map((i) => ({
+            ocr.items.map((i) => ({
                 ...i,
                 qty: Number.isFinite(i.qty) ? i.qty : 1,
                 unit: i.unit ?? 'unidad'
@@ -56,16 +56,12 @@ export default function OCRReview() {
     // Catalog for Autocomplete
     const [catalog, setCatalog] = useState<Product[]>([]);
     useEffect(() => {
-        (async () => {
-            const r = await api.get<Product[]>('/products');
-            setCatalog(r.data || []);
-        })();
+        api.get<Product[]>('/products').then((r) => setCatalog(r.data || []));
     }, []);
 
     const handleChange = (idx: number, patch: Partial<OcrItem>) => {
         setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
     };
-
     const remove = (idx: number) => setItems((prev) => prev.filter((_, i) => i !== idx));
     const addEmpty = () => setItems((prev) => [...prev, { sku: '', name: '', qty: 1, unit: 'unidad' } as OcrItem]);
 
@@ -75,33 +71,28 @@ export default function OCRReview() {
     );
 
     const submit = async () => {
+        const lines = items
+            .filter((it) => it.sku || it.name)
+            .map((it) => ({
+                sku: it.sku || matchSkuByName(catalog, it.name)!,
+                qty: it.qty,
+                unit: it.unit || 'unidad',
+                note: it.note ?? null
+            }));
+
+        if (lines.some((l) => !l.sku)) {
+            setSnack({ open: true, sev: 'error', msg: 'Falta SKU en alguna línea.' });
+            return;
+        }
+
         try {
-            const lines = items
-                .filter((it) => it.sku || it.name)
-                .map((it) => ({
-                    sku: it.sku || matchSkuByName(catalog, it.name)!,
-                    qty: it.qty,
-                    unit: it.unit || 'unidad',
-                    note: it.note ?? null
-                }));
-
-            if (lines.some((l) => !l.sku)) {
-                setSnack({ open: true, sev: 'error', msg: 'Falta SKU en alguna línea. Selecciona del catálogo.' });
-                return;
-            }
-
-            // Assign OCR albaran to incoming/outgoing using ID in URL and payload only type+items
-            await assignOCRAlbaran(albaranId, {
-                type,
-                items: lines
-            });
-
+            await assignOCRAlbaran(albaranId, { type, items: lines });
             setSnack({ open: true, sev: 'success', msg: 'Albarán asignado. Vamos a la caja.' });
             setTimeout(() => nav(type === 'incoming' ? '/entrada' : '/salida'), 800);
         } catch (e: any) {
             console.error(e);
             const detail = e?.response?.data?.detail;
-            setSnack({ open: true, sev: 'error', msg: detail ? `Error: ${detail}` : 'Error al asignar el albarán.' });
+            setSnack({ open: true, sev: 'error', msg: detail ?? 'Error al asignar.' });
         }
     };
 
@@ -122,9 +113,13 @@ export default function OCRReview() {
                     <MenuItem value="outgoing">Venta (Salida)</MenuItem>
                 </TextField>
 
-                {sourceImageName && (
-                    <TextField size="small" label="Archivo" value={sourceImageName} InputProps={{ readOnly: true }} />
-                )}
+                {/* Editable file name */}
+                <TextField
+                    size="small"
+                    label="Archivo"
+                    value={fileName}
+                    onChange={(e) => setFileName(e.target.value)}
+                />
             </Box>
 
             {items.map((it, idx) => (
@@ -135,19 +130,13 @@ export default function OCRReview() {
                         getOptionLabel={(o) => `${o.sku} — ${o.name}`}
                         value={it.sku ? catalog.find((p) => p.sku === it.sku) ?? null : null}
                         onChange={(_, val) => val && handleChange(idx, { sku: val.sku, name: val.name, unit: val.unit ?? it.unit })}
-                        renderInput={(params) => (
-                            <TextField {...params} label="Producto (buscar)" placeholder="SKU / nombre" />
-                        )}
+                        renderInput={(params) => <TextField {...params} label="Producto (buscar)" placeholder="SKU / nombre" />}
                     />
-
                     <TextField size="small" label="Cantidad" type="number" inputProps={{ step: 1 }} value={it.qty} onChange={(e) => handleChange(idx, { qty: Number(e.target.value) })} />
-
                     <TextField select size="small" label="Unidad" value={it.unit} onChange={(e) => handleChange(idx, { unit: e.target.value as any })}>
                         {UNITS.map((u) => <MenuItem key={u} value={u}>{u}</MenuItem>)}
                     </TextField>
-
                     <TextField size="small" label="Nota" value={it.note ?? ''} onChange={(e) => handleChange(idx, { note: e.target.value })} />
-
                     <IconButton color="error" onClick={() => remove(idx)}><DeleteIcon /></IconButton>
                 </Box>
             ))}
@@ -167,7 +156,8 @@ export default function OCRReview() {
 
 function matchSkuByName(catalog: Product[], name: string): string | undefined {
     const n = name.trim().toLowerCase();
-    const hit = catalog.find((p) => p.name.toLowerCase().includes(n) || n.includes(p.name.toLowerCase()));
-    return hit?.sku;
+    return catalog.find((p) => p.name.toLowerCase().includes(n) || n.includes(p.name.toLowerCase()))?.sku;
 }
+
+
 
