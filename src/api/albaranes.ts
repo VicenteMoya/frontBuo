@@ -73,9 +73,9 @@ export interface AssignPayload {
     items: { sku: string; qty: number; unit: string; note?: string | null }[];
 }
 
-export async function fetchPending(type: string, sessionKey: string | undefined, type: AlbaranType): Promise<AlbaranPending[]> {
+export async function fetchPending(type: string, sessionKey: string | undefined): Promise<AlbaranPending[]> {
     const r = await api.get(`/albaranes/pending`, {
-        params: { type, session_key: getSessionKey() }   // <-- filtra por sesión
+        params: { type, session_key: sessionKey }   // <-- filtra por sesión
     });
     return r.data as AlbaranPending[];
 }
