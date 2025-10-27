@@ -1,4 +1,5 @@
-import { useLocation } from 'react-router-dom';
+// src/pages/OCRReview.tsx
+import { useLocation, useNavigate } from 'react-router-dom';  // ← añadimos useNavigate
 import { useEffect, useMemo, useState } from 'react';
 import {
     Box,
@@ -25,6 +26,7 @@ export default function OCRReview() {
     const { state } = useLocation() as {
         state: { ocr: OcrResult; sourceImageName: string; albaranId: number };
     };
+    const nav = useNavigate();  // ← instanciamos el hook
 
     const albaranId = state?.albaranId;
     const initialFileName = state?.sourceImageName || '';
@@ -35,12 +37,10 @@ export default function OCRReview() {
         { open: false, msg: '', sev: 'success' }
     );
 
-    // Initialize lines from OCR
+    // Inicializar líneas desde OCR
     useEffect(() => {
         const ocr = state?.ocr;
-        if (!ocr || albaranId === undefined) {
-            return;
-        }
+        if (!ocr || albaranId === undefined) return;
         setItems(
             ocr.items.map(i => ({
                 ...i,
@@ -50,7 +50,7 @@ export default function OCRReview() {
         );
     }, [state, albaranId]);
 
-    // Load product catalog
+    // Carga catálogo de productos
     const [catalog, setCatalog] = useState<Product[]>([]);
     useEffect(() => {
         import('../api/axios').then(({ default: api }) =>
@@ -92,6 +92,8 @@ export default function OCRReview() {
                 items: lines
             });
             setSnack({ open: true, sev: 'success', msg: 'Albarán guardado como pendiente.' });
+            // ← redirige a /ocr tras 1s
+            setTimeout(() => nav('/ocr'), 1000);
         } catch (e: any) {
             const detail = e?.response?.data?.detail;
             const text = typeof detail === 'string' ? detail : JSON.stringify(detail);
