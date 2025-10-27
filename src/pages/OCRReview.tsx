@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import {
     Box,
@@ -15,135 +15,129 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import Autocomplete from '@mui/material/Autocomplete';
 import type { OcrItem, OcrResult } from '../api/types';
-import api from '../api/axios';
-import {assignOCRAlbaran, commitOCRAlbaran} from '../api/albaranes';
-import { getSessionKey } from '../utils/sessionKey';
+import { commitOCRAlbaran } from '../api/albaranes';
+
+const UNITS = ['unidad', 'kg', 'caja', 'litro'];
 
 type Product = { sku: string; name: string; unit?: string };
-const UNITS = ['unidad', 'kg', 'caja', 'litro'];
 
 export default function OCRReview() {
     const { state } = useLocation() as {
         state: { ocr: OcrResult; sourceImageName: string; albaranId: number };
     };
-    const nav = useNavigate();
 
     const albaranId = state?.albaranId;
     const initialFileName = state?.sourceImageName || '';
     const [fileName, setFileName] = useState<string>(initialFileName);
     const [items, setItems] = useState<OcrItem[]>([]);
     const [type, setType] = useState<'incoming' | 'outgoing'>('incoming');
-    const [snack, setSnack] = useState<{ open: boolean; msg: string; sev: 'success' | 'error' }>({
-        open: false,
-        msg: '',
-        sev: 'success'
-    });
+    const [snack, setSnack] = useState<{ open: boolean; msg: string; sev: 'success' | 'error' }>(
+        { open: false, msg: '', sev: 'success' }
+    );
 
+    // Initialize lines from OCR
     useEffect(() => {
-        const ocr: OcrResult | undefined = state?.ocr;
+        const ocr = state?.ocr;
         if (!ocr || albaranId === undefined) {
-            nav('/ocr');
             return;
         }
         setItems(
-            ocr.items.map((i) => ({
+            ocr.items.map(i => ({
                 ...i,
                 qty: Number.isFinite(i.qty) ? i.qty : 1,
                 unit: i.unit ?? 'unidad'
             }))
         );
-    }, [state, albaranId, nav]);
+    }, [state, albaranId]);
 
-    // Catalog for Autocomplete
+    // Load product catalog
     const [catalog, setCatalog] = useState<Product[]>([]);
     useEffect(() => {
-        api.get<Product[]>('/products').then((r) => setCatalog(r.data || []));
+        import('../api/axios').then(({ default: api }) =>
+            api.get<Product[]>('/products').then(r => setCatalog(r.data || []))
+        );
     }, []);
 
     const handleChange = (idx: number, patch: Partial<OcrItem>) => {
-        setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+        setItems(prev => prev.map((it, i) => i === idx ? { ...it, ...patch } : it));
     };
-    const remove = (idx: number) => setItems((prev) => prev.filter((_, i) => i !== idx));
-    const addEmpty = () => setItems((prev) => [...prev, { sku: '', name: '', qty: 1, unit: 'unidad' } as OcrItem]);
+    const remove = (idx: number) => setItems(prev => prev.filter((_, i) => i !== idx));
+    const addEmpty = () => setItems(prev => [...prev, { sku: '', name: '', qty: 1, unit: 'unidad' } as OcrItem]);
 
     const canSubmit = useMemo(
-        () => items.length > 0 && items.every((it) => it.qty > 0 && (it.sku || it.name.trim().length > 1)),
+        () => items.length > 0 && items.every(it => it.qty > 0 && (it.sku || it.name.trim().length > 1)),
         [items]
     );
 
     const submit = async () => {
         const lines = items
-            .filter((it) => it.sku || it.name)
-            .map((it) => ({
-                sku: it.sku || matchSkuByName(catalog, it.name)!,
-                qty: it.qty,
-                unit: it.unit || 'unidad',
+            .filter(it => it.sku || it.name)
+            .map(it => ({
+                sku:  it.sku || matchSkuByName(catalog, it.name)!,
+                qty:  it.qty,
+                unit: it.unit,
                 note: it.note ?? null
             }));
 
-        if (lines.some((l) => !l.sku)) {
+        if (lines.some(l => !l.sku)) {
             setSnack({ open: true, sev: 'error', msg: 'Falta SKU en alguna línea.' });
             return;
         }
 
         try {
-            await commitOCRAlbaran({ type, origin: 'ocr', source_image_name: fileName, lines });
-            setSnack({ open: true, sev: 'success', msg: 'Albarán pendiente creado.' });
-            setTimeout(() => nav(type === 'incoming' ? '/entrada' : '/salida'), 800);
+            await commitOCRAlbaran({
+                type,
+                origin: 'ocr',
+                sourceImageName: fileName,
+                items: lines
+            });
+            setSnack({ open: true, sev: 'success', msg: 'Albarán guardado como pendiente.' });
         } catch (e: any) {
             const detail = e?.response?.data?.detail;
-            const textMsg =
-                typeof detail === 'string'
-                    ? detail
-                    : Array.isArray(detail)
-                        ? detail.join('; ')
-                        : JSON.stringify(detail);
-            setSnack({ open: true, sev: 'error', msg: textMsg });
+            const text = typeof detail === 'string' ? detail : JSON.stringify(detail);
+            setSnack({ open: true, sev: 'error', msg: text });
         }
     };
 
     return (
         <Box p={2} component={Paper}>
-            <Typography variant="h6" mb={2}>
-                Revisión del albarán
-            </Typography>
+            <Typography variant="h6" mb={2}>Revisión del albarán</Typography>
 
             <Box display="flex" gap={2} mb={2}>
                 <TextField
                     select size="small"
-                    label="Tipo de albarán (OCR)"
+                    label="Tipo"
                     value={type}
-                    onChange={(e) => setType(e.target.value as 'incoming' | 'outgoing')}
+                    onChange={e => setType(e.target.value as any)}
                 >
-                    <MenuItem value="incoming">Compra (Entrada)</MenuItem>
-                    <MenuItem value="outgoing">Venta (Salida)</MenuItem>
+                    <MenuItem value="incoming">Entrada</MenuItem>
+                    <MenuItem value="outgoing">Salida</MenuItem>
                 </TextField>
 
-                {/* Editable file name */}
                 <TextField
                     size="small"
                     label="Archivo"
                     value={fileName}
-                    onChange={(e) => setFileName(e.target.value)}
+                    onChange={e => setFileName(e.target.value)}
                 />
             </Box>
 
             {items.map((it, idx) => (
-                <Box key={idx} display="grid" gridTemplateColumns="2fr 1.2fr 0.8fr 2fr 40px" gap={1} alignItems="center" mb={1}>
+                <Box key={idx} display="grid" gridTemplateColumns="2fr 1fr 1fr 2fr 40px" gap={1} alignItems="center" mb={1}>
                     <Autocomplete
                         size="small"
                         options={catalog}
-                        getOptionLabel={(o) => `${o.sku} — ${o.name}`}
-                        value={it.sku ? catalog.find((p) => p.sku === it.sku) ?? null : null}
-                        onChange={(_, val) => val && handleChange(idx, { sku: val.sku, name: val.name, unit: val.unit ?? it.unit })}
-                        renderInput={(params) => <TextField {...params} label="Producto (buscar)" placeholder="SKU / nombre" />}
+                        getOptionLabel={o => `${o.sku} — ${o.name}`}
+                        value={it.sku ? catalog.find(p => p.sku === it.sku) ?? null : null}
+                        onChange={(_, val) => val && handleChange(idx, { sku: val.sku, name: val.name, unit: val.unit })}
+                        renderInput={params => <TextField {...params} label="Producto" />}
                     />
-                    <TextField size="small" label="Cantidad" type="number" inputProps={{ step: 1 }} value={it.qty} onChange={(e) => handleChange(idx, { qty: Number(e.target.value) })} />
-                    <TextField select size="small" label="Unidad" value={it.unit} onChange={(e) => handleChange(idx, { unit: e.target.value as any })}>
-                        {UNITS.map((u) => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                    <TextField size="small" label="Cantidad" type="number" value={it.qty} onChange={e => handleChange(idx, { qty: Number(e.target.value) })} />
+                    <TextField select size="small" label="Unidad" value={it.unit} onChange={e => handleChange(idx, { unit: e.target.value as any })}>
+                        {UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
                     </TextField>
-                    <TextField size="small" label="Nota" value={it.note ?? ''} onChange={(e) => handleChange(idx, { note: e.target.value })} />
-                    <IconButton color="error" onClick={() => remove(idx)}><DeleteIcon /></IconButton>
+                    <TextField size="small" label="Nota" value={it.note ?? ''} onChange={e => handleChange(idx, { note: e.target.value })} />
+                    <IconButton color="error" onClick={() => remove(idx)}><DeleteIcon/></IconButton>
                 </Box>
             ))}
 
@@ -153,8 +147,8 @@ export default function OCRReview() {
                 <Button variant="contained" disabled={!canSubmit} onClick={submit}>Confirmar</Button>
             </Box>
 
-            <Snackbar open={snack.open} autoHideDuration={2800} onClose={() => setSnack((s) => ({ ...s, open: false }))}>
-                <Alert severity={snack.sev} onClose={() => setSnack((s) => ({ ...s, open: false }))}>{snack.msg}</Alert>
+            <Snackbar open={snack.open} autoHideDuration={3000} onClose={() => setSnack(s => ({...s,open:false}))}>
+                <Alert severity={snack.sev} onClose={() => setSnack(s => ({...s,open:false}))}>{snack.msg}</Alert>
             </Snackbar>
         </Box>
     );
@@ -162,8 +156,7 @@ export default function OCRReview() {
 
 function matchSkuByName(catalog: Product[], name: string): string | undefined {
     const n = name.trim().toLowerCase();
-    return catalog.find((p) => p.name.toLowerCase().includes(n) || n.includes(p.name.toLowerCase()))?.sku;
+    const hit = catalog.find(p => p.name.toLowerCase().includes(n) || n.includes(p.name.toLowerCase()));
+    return hit?.sku;
 }
-
-
 

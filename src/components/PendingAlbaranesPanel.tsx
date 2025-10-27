@@ -26,17 +26,26 @@ import {
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import api from '../api/axios';
-import {completeAlbaran, type AlbaranPending, fetchPending} from '../api/albaranes';
+import { fetchPending, completeAlbaran, type AlbaranPending } from '../api/albaranes';
 import { useNavigate } from 'react-router-dom';
 
+type AlbaranLine = {
+    sku: string;
+    qty: number;
+    unit: string;
+    note?: string | null;
+};
 
-export default function PendingAlbaranesPanel({
-                                                  type,
-                                                  sessionKey
-                                              }: {
+type AlbaranDetail = {
+    id: number;
     type: 'incoming' | 'outgoing';
-    sessionKey?: string;
-}) {
+    origin?: string | null;
+    sourceImageName?: string | null;
+    created_at: string;
+    lines: AlbaranLine[];
+};
+
+export default function PendingAlbaranesPanel({ type }: { type: 'incoming' | 'outgoing' }) {
     const [rows, setRows] = useState<AlbaranPending[]>([]);
     const [snack, setSnack] = useState<{ open: boolean; msg: string; sev: 'success' | 'error' }>({
         open: false,
@@ -47,11 +56,11 @@ export default function PendingAlbaranesPanel({
 
     const [open, setOpen] = useState(false);
     const [loadingOne, setLoadingOne] = useState(false);
-    const [detail, setDetail] = useState<any>(null);
+    const [detail, setDetail] = useState<AlbaranDetail | null>(null);
 
     const load = async () => {
         try {
-            const data = await fetchPending(type, sessionKey);
+            const data = await fetchPending(type);  // ahora solo filtra por type
             setRows(data);
         } catch (e) {
             setSnack({ open: true, sev: 'error', msg: 'Error cargando albaranes pendientes' });
@@ -62,7 +71,7 @@ export default function PendingAlbaranesPanel({
         setOpen(true);
         setLoadingOne(true);
         try {
-            const r = await api.get(`/albaranes/${id}`);
+            const r = await api.get<AlbaranDetail>(`/albaranes/${id}`);
             setDetail(r.data);
         } catch (e) {
             setSnack({ open: true, sev: 'error', msg: 'No se pudo cargar el albarán' });
@@ -74,7 +83,7 @@ export default function PendingAlbaranesPanel({
 
     useEffect(() => {
         load();
-    }, [type, sessionKey]);
+    }, [type]);  // ya no depende de sessionKey
 
     const onCheck = async (id: number, checked: boolean) => {
         if (!checked) return;
@@ -92,15 +101,11 @@ export default function PendingAlbaranesPanel({
     return (
         <Paper sx={{ p: 2 }}>
             <Typography variant="subtitle1">
-                {type === 'incoming'
-                    ? 'Albaranes de COMPRA pendientes'
-                    : 'Albaranes de VENTA pendientes'}
+                {type === 'incoming' ? 'Albaranes de COMPRA pendientes' : 'Albaranes de VENTA pendientes'}
             </Typography>
 
             {rows.length === 0 ? (
-                <Box mt={1} color="text.secondary">
-                    No hay albaranes pendientes.
-                </Box>
+                <Box mt={1} color="text.secondary">No hay albaranes pendientes.</Box>
             ) : (
                 <List dense>
                     {rows.map((r) => (
@@ -135,55 +140,49 @@ export default function PendingAlbaranesPanel({
                 autoHideDuration={2500}
                 onClose={() => setSnack((s) => ({ ...s, open: false }))}
             >
-                <Alert
-                    severity={snack.sev}
-                    onClose={() => setSnack((s) => ({ ...s, open: false }))}
-                >
+                <Alert severity={snack.sev} onClose={() => setSnack((s) => ({ ...s, open: false }))}>
                     {snack.msg}
                 </Alert>
             </Snackbar>
 
             <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth>
                 <DialogTitle>
-                    {detail
-                        ? `Albarán #${detail.id} · ${
-                            detail.type === 'incoming' ? 'COMPRA' : 'VENTA'
-                        }`
-                        : 'Cargando…'}
+                    {detail ? `Albarán #${detail.id} · ${(detail.type === 'incoming' ? 'COMPRA' : 'VENTA')}` : 'Cargando…'}
                 </DialogTitle>
                 <DialogContent dividers>
-                    {loadingOne && (
+                    {loadingOne ? (
                         <Box py={3} display="flex" justifyContent="center">
                             <CircularProgress />
                         </Box>
-                    )}
-                    {!loadingOne && detail && (
-                        <>
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                {new Date(detail.created_at).toLocaleString()} · {detail.origin || '-'}{' '}
-                                {detail.sourceImageName ? `· ${detail.sourceImageName}` : ''}
-                            </Typography>
-                            <Table size="small">
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell>SKU</TableCell>
-                                        <TableCell align="right">Cantidad</TableCell>
-                                        <TableCell>Unidad</TableCell>
-                                        <TableCell>Nota</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {detail.lines?.map((ln: any, i: number) => (
-                                        <TableRow key={i}>
-                                            <TableCell>{ln.sku}</TableCell>
-                                            <TableCell align="right">{ln.qty}</TableCell>
-                                            <TableCell>{ln.unit}</TableCell>
-                                            <TableCell>{ln.note || '-'}</TableCell>
+                    ) : (
+                        detail && (
+                            <>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                    {new Date(detail.created_at).toLocaleString()} · {detail.origin || '-'}{' '}
+                                    {detail.sourceImageName ? `· ${detail.sourceImageName}` : ''}
+                                </Typography>
+                                <Table size="small">
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>SKU</TableCell>
+                                            <TableCell align="right">Cantidad</TableCell>
+                                            <TableCell>Unidad</TableCell>
+                                            <TableCell>Nota</TableCell>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </>
+                                    </TableHead>
+                                    <TableBody>
+                                        {detail.lines.map((ln, i) => (
+                                            <TableRow key={i}>
+                                                <TableCell>{ln.sku}</TableCell>
+                                                <TableCell align="right">{ln.qty}</TableCell>
+                                                <TableCell>{ln.unit}</TableCell>
+                                                <TableCell>{ln.note || '-'}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </>
+                        )
                     )}
                 </DialogContent>
                 <DialogActions>
@@ -194,23 +193,15 @@ export default function PendingAlbaranesPanel({
                         disabled={!detail}
                         onClick={async () => {
                             if (!detail) return;
-                            const ok = confirm(
-                                'Marcar como COMPLETADO este albarán?'
-                            );
+                            const ok = confirm('Marcar como COMPLETADO este albarán?');
                             if (!ok) return;
                             try {
                                 await completeAlbaran(detail.id);
                                 setSnack({ open: true, sev: 'success', msg: 'Albarán completado' });
-                                setRows((prev) =>
-                                    prev.filter((r) => r.id !== detail.id)
-                                );
+                                setRows((prev) => prev.filter((r) => r.id !== detail.id));
                                 setOpen(false);
                             } catch {
-                                setSnack({
-                                    open: true,
-                                    sev: 'error',
-                                    msg: 'No se pudo completar el albarán'
-                                });
+                                setSnack({ open: true, sev: 'error', msg: 'No se pudo completar el albarán' });
                             }
                         }}
                     >

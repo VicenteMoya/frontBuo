@@ -1,5 +1,4 @@
 import api from './axios';
-import { getSessionKey } from '../utils/sessionKey';
 
 export type AlbaranType = 'incoming' | 'outgoing';
 export type AlbaranStatus = 'pending' | 'completed';
@@ -27,8 +26,8 @@ export type AlbaranPending = {
     id: number;
     type: AlbaranType;
     origin?: string | null;
-    sourceImageName?: string | null;   // Normalizamos a camelCase
-    created_at: string;                // Lo dejamos tal cual espera el panel
+    sourceImageName?: string | null;
+    created_at: string;
     lines: AlbaranLine[];
 };
 
@@ -37,6 +36,7 @@ export type AlbaranDetail = AlbaranPending;
 // ──────────────────────────────────────────────────────────────────────────────
 // Normalizadores: convierten snake_case del backend a camelCase donde haga falta
 // ──────────────────────────────────────────────────────────────────────────────
+
 function normalizeLine(raw: any): AlbaranLine {
     return {
         sku: raw.sku,
@@ -46,9 +46,7 @@ function normalizeLine(raw: any): AlbaranLine {
     };
 }
 
-
 function normalizeAlbaran(raw: any): AlbaranPending {
-    // El backend probablemente devuelve source_image_name y created_at
     return {
         id: Number(raw.id),
         type: raw.type as AlbaranType,
@@ -63,53 +61,51 @@ function normalizeAlbaran(raw: any): AlbaranPending {
 // API
 // ──────────────────────────────────────────────────────────────────────────────
 
-/**
- * Lista albaranes pendientes por tipo (incoming/outgoing).
- * GET /albaranes/pending?type=incoming|outgoing
- */
-
-export interface AssignPayload {
-    type: 'incoming' | 'outgoing';
-    items: { sku: string; qty: number; unit: string; note?: string | null }[];
+export interface CommitPayload {
+    type: AlbaranType;
+    origin?: string;
+    sourceImageName?: string;
+    items: {
+        sku: string;
+        qty: number;
+        unit: string;
+        note?: string | null;
+    }[];
 }
 
-export async function fetchPending(type: string, sessionKey: string | undefined): Promise<AlbaranPending[]> {
+export async function fetchPending(type: AlbaranType): Promise<AlbaranPending[]> {
     const r = await api.get(`/albaranes/pending`, {
-        params: { type, session_key: sessionKey }   // <-- filtra por sesión
+        params: { type }
     });
-    return r.data as AlbaranPending[];
+    return (r.data as any[]).map(normalizeAlbaran);
 }
 
-/**
- * Detalle de un albarán.
- * GET /albaranes/:id
- */
 export async function fetchAlbaran(id: number): Promise<AlbaranDetail> {
     const r = await api.get(`/albaranes/${id}`);
     return normalizeAlbaran(r.data);
 }
 
-/**
- * Marca un albarán como completado.
- * POST /albaranes/:id/complete
- */
 export async function completeAlbaran(id: number) {
-    const r = await api.post<{ ok: boolean; id: number; status: AlbaranStatus }>(`/albaranes/${id}/complete`);
+    const r = await api.post<{ ok: boolean; id: number; status: AlbaranStatus }>(
+        `/albaranes/${id}/complete`
+    );
     return r.data;
 }
 
-// Confirmación desde OCR Review
-export async function commitOCRAlbaran(payload: {
-    type: AlbaranType;
-    origin?: string;
-    source_image_name?: string;
-    lines: { sku: string; qty: number; unit: string; note?: string | null }[];
-}) {
+export async function commitOCRAlbaran(payload: CommitPayload) {
     const r = await api.post<Albaran>(`/albaranes/commit`, payload);
     return r.data;
 }
 
-// src/api/albaranes.ts
+export interface AssignPayload {
+    type: AlbaranType;
+    items: {
+        sku: string;
+        qty: number;
+        unit: string;
+        note?: string | null;
+    }[];
+}
 
 export function assignOCRAlbaran(
     albaranId: number,
@@ -118,9 +114,6 @@ export function assignOCRAlbaran(
     return api.patch(
         `/albaranes/${albaranId}/complete`,
         payload,
-        {
-            // acepta cualquier status entre 200 y 299, incluyendo 204
-            validateStatus: (status) => status >= 200 && status < 300
-        }
+        { validateStatus: (status) => status >= 200 && status < 300 }
     );
 }
