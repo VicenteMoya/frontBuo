@@ -7,7 +7,7 @@ const PendingAlbaranesPanel = React.lazy(() => import('../components/PendingAlba
 
 type Product = { sku: string; name: string; unit?: string };
 
-const UNITS = ['unidad','kg','caja'];
+const UNITS = ['unidad','kg'];
 
 export default function CajaSalida() {
     const [catalog, setCatalog] = useState<Product[]>([]);

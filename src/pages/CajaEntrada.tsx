@@ -15,7 +15,7 @@ type Msg = { type: "success" | "error"; text: string } | null;
 type Mode = "scale" | "manual";
 
 // lista de unidades visibles en el selector
-const UNIT_OPTIONS = ["unidad", "kg", "g", "l", "ml", "caja"];
+const UNIT_OPTIONS = ["unidad", "kg"];
 
 export default function CajaEntrada() {
     const [products, setProducts] = useState<Product[]>([]);
