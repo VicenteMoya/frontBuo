@@ -1,14 +1,29 @@
 import React, { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import {
-    Alert, Box, Button, Card, CardContent, Chip, Grid, Typography,
-    Autocomplete, Paper, ToggleButton, ToggleButtonGroup, FormControl,
-    InputLabel, Select, MenuItem, TextField
+    Alert,
+    Box,
+    Button,
+    Card,
+    CardContent,
+    Chip,
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Select,
+    TextField,
+    ToggleButton,
+    ToggleButtonGroup,
+    Paper,
 } from "@mui/material";
+import Autocomplete from "@mui/material/Autocomplete";
 import api from "../api/axios";
 import { useScanner } from "../hooks/useScanner";
 import { useScale } from "../hooks/useScale";
 import { getSessionKey } from "../utils/sessionKey";
-const PendingAlbaranesPanel = React.lazy(() => import('../components/PendingAlbaranesPanel'));
+
+const PendingAlbaranesPanel = React.lazy(
+    () => import("../components/PendingAlbaranesPanel")
+);
 
 type Product = { sku: string; name: string; unit: string };
 type Msg = { type: "success" | "error"; text: string } | null;
@@ -32,7 +47,10 @@ export default function CajaEntrada() {
 
     // cargar productos
     useEffect(() => {
-        api.get<Product[]>("/products").then(r => setProducts(r.data)).catch(() => {});
+        api
+            .get<Product[]>("/products")
+            .then((r) => setProducts(r.data))
+            .catch(() => {});
     }, []);
 
     // si la báscula se desconecta y estamos en modo scale → pasamos a manual
@@ -54,18 +72,32 @@ export default function CajaEntrada() {
     }, [unit, mode]);
 
     // scanner: si lee un SKU válido, lo selecciona y pone su unidad canónica
-    const onScan = useCallback((code: string) => {
-        const p = products.find(x => x.sku === code) || null;
-        if (p) { setSku(p.sku); setUnit(p.unit); setMsg({ type: "success", text: `SKU ${code} leído` }); }
-        else setMsg({ type: "error", text: `Código ${code} no corresponde a un SKU` });
-    }, [products]);
+    const onScan = useCallback(
+        (code: string) => {
+            const p = products.find((x) => x.sku === code) || null;
+            if (p) {
+                setSku(p.sku);
+                setUnit(p.unit);
+                setMsg({ type: "success", text: `SKU ${code} leído` });
+            } else setMsg({ type: "error", text: `Código ${code} no corresponde a un SKU` });
+        },
+        [products]
+    );
     useScanner(onScan);
 
     const productOptions = useMemo(
-        () => products.map(p => ({ label: `${p.sku} — ${p.name}`, sku: p.sku, unit: p.unit })),
+        () =>
+            products.map((p) => ({
+                label: `${p.sku} — ${p.name}`,
+                sku: p.sku,
+                unit: p.unit,
+            })),
         [products]
     );
-    const selectedProduct = useMemo(() => products.find(p => p.sku === sku) || null, [products, sku]);
+    const selectedProduct = useMemo(
+        () => products.find((p) => p.sku === sku) || null,
+        [products, sku]
+    );
 
     // helper: ¿la cantidad es válida según unidad?
     const isIntegerUnit = unit === "unidad";
@@ -73,17 +105,25 @@ export default function CajaEntrada() {
     const qtyValid = qty > 0 && (!isIntegerUnit || qtyIsInteger);
 
     const submit = async () => {
-        if (!selectedProduct) { setMsg({ type: "error", text: "Selecciona un producto" }); return; }
+        if (!selectedProduct) {
+            setMsg({ type: "error", text: "Selecciona un producto" });
+            return;
+        }
         if (!qtyValid) {
             setMsg({
                 type: "error",
-                text: isIntegerUnit ? "Cantidad debe ser un entero mayor que 0" : "Cantidad debe ser > 0"
+                text: isIntegerUnit
+                    ? "Cantidad debe ser un entero mayor que 0"
+                    : "Cantidad debe ser > 0",
             });
             return;
         }
         // comprobación de unidad canónica del producto (política acordada)
         if (unit !== selectedProduct.unit) {
-            setMsg({ type: "error", text: `Unidad inválida. Esperado: ${selectedProduct.unit}` });
+            setMsg({
+                type: "error",
+                text: `Unidad inválida. Esperado: ${selectedProduct.unit}`,
+            });
             return;
         }
 
@@ -91,11 +131,17 @@ export default function CajaEntrada() {
         try {
             const body = { sku: selectedProduct.sku, qty, unit, note };
             const resp = await api.post("/incoming", body);
-            setMsg({ type: "success", text: `Entrada registrada. Lote ${resp.data?.lot?.lot_code || ""}` });
-            setQty(isIntegerUnit ? 0 : 0); // resetea
+            setMsg({
+                type: "success",
+                text: `Entrada registrada. Lote ${resp.data?.lot?.lot_code || ""}`,
+            });
+            setQty(0);
             setNote("");
         } catch (e: any) {
-            setMsg({ type: "error", text: e?.response?.data?.detail || "Error al registrar" });
+            setMsg({
+                type: "error",
+                text: e?.response?.data?.detail || "Error al registrar",
+            });
         } finally {
             setBusy(false);
         }
@@ -107,116 +153,152 @@ export default function CajaEntrada() {
     }, [selectedProduct]);
 
     return (
-        <Grid container spacing={2} sx={{ p: 2 }}>
-            <Grid item xs={12}><Typography variant="h5">Groupymes · Caja Entrada</Typography></Grid>
+        <Box sx={{ p: 2 }}>
+            {msg && (
+                <Box mb={2}>
+                    <Alert severity={msg.type} onClose={() => setMsg(null)}>
+                        {msg.text}
+                    </Alert>
+                </Box>
+            )}
 
-            {msg && <Grid item xs={12}><Alert severity={msg.type} onClose={() => setMsg(null)}>{msg.text}</Alert></Grid>}
-
-            <Grid item xs={12} md={8}>
-                <Card>
-                    <CardContent>
-                        <Box display="grid" gap={2}>
-                            <Autocomplete
-                                options={productOptions}
-                                isOptionEqualToValue={(o, v) => o?.sku === v?.sku}
-                                getOptionLabel={(o:any)=> o?.label ?? ''}
-                                onChange={(_, val) => { setSku(val?.sku || ""); if (val?.unit) setUnit(val.unit); }}
-                                renderInput={(params) => <TextField {...params} label="Producto (SKU — Nombre)" />}
-                                value={productOptions.find(o => o.sku === sku) || null}
-                            />
-
-                            {/* Selector de modo: Báscula / Manual */}
-                            <Box display="flex" alignItems="center" gap={2}>
-                                <ToggleButtonGroup
-                                    exclusive
-                                    size="small"
-                                    value={mode}
-                                    onChange={(_, v: Mode | null) => { if (v) setMode(v); }}
-                                >
-                                    <ToggleButton value="scale" disabled={!scaleWs || unit === "unidad"}>
-                                        Báscula
-                                    </ToggleButton>
-                                    <ToggleButton value="manual">Manual</ToggleButton>
-                                </ToggleButtonGroup>
-
-                                <Chip
-                                    label={mode === "scale"
-                                        ? (scale.connected ? "Báscula conectada" : "Báscula desconectada")
-                                        : "Entrada manual"}
-                                    color={mode === "scale" && scale.connected ? "success" : "default"}
-                                    variant="outlined"
-                                />
-                            </Box>
-
-                            {/* Cantidad + Unidad (select) */}
-                            <Box display="flex" gap={2}>
+            {/* CARD PRINCIPAL (mismo ancho que CajaSalida) */}
+            <Card>
+                <CardContent>
+                    {/* Fila principal: Producto / Cantidad / Unidad / Nota */}
+                    <Box
+                        display="grid"
+                        gridTemplateColumns="1.8fr 0.8fr 0.8fr 1.8fr"
+                        gap={2}
+                        alignItems="center"
+                    >
+                        <Autocomplete
+                            options={productOptions}
+                            isOptionEqualToValue={(o, v) => o?.sku === v?.sku}
+                            getOptionLabel={(o: any) => o?.label ?? ""}
+                            onChange={(_, val) => {
+                                setSku(val?.sku || "");
+                                if (val?.unit) setUnit(val.unit);
+                            }}
+                            renderInput={(params) => (
                                 <TextField
-                                    label="Cantidad"
-                                    type="number"
-                                    value={Number.isFinite(qty) ? qty : 0}
-                                    onChange={(e) => {
-                                        const v = Number(e.target.value);
-                                        // si la unidad es "unidad" solo permitimos enteros
-                                        setQty(isIntegerUnit ? Math.trunc(v) : v);
-                                    }}
-                                    // spinner: siempre de 1 en 1; permitir decimales cuando no es "unidad"
-                                    inputProps={{ step: isIntegerUnit ? 1 : "any" }}
-                                    sx={{ flex: 1 }}
-                                    disabled={mode === "scale"} // bloqueado si pesa la báscula
-                                    error={!qtyValid && qty > 0}
-                                    helperText={!qtyValid && qty > 0 ? "Para 'unidad' la cantidad debe ser entera" : undefined}
+                                    {...params}
+                                    label="Producto (SKU — Nombre)"
+                                    placeholder="Buscar producto"
                                 />
+                            )}
+                            value={productOptions.find((o) => o.sku === sku) || null}
+                        />
 
-                                <FormControl sx={{ width: 180 }}>
-                                    <InputLabel id="unit-label">Unidad</InputLabel>
-                                    <Select
-                                        labelId="unit-label"
-                                        label="Unidad"
-                                        value={unit}
-                                        onChange={(e) => setUnit(String(e.target.value))}
-                                    >
-                                        {UNIT_OPTIONS.map(u => (
-                                            <MenuItem key={u} value={u}>{u}</MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                            </Box>
+                        <TextField
+                            label="Cantidad"
+                            type="number"
+                            value={Number.isFinite(qty) ? qty : 0}
+                            onChange={(e) => {
+                                const v = Number(e.target.value);
+                                setQty(isIntegerUnit ? Math.trunc(v) : v);
+                            }}
+                            inputProps={{ step: isIntegerUnit ? 1 : "any" }}
+                            disabled={mode === "scale"}
+                            error={!qtyValid && qty > 0}
+                            helperText={
+                                !qtyValid && qty > 0
+                                    ? "Para 'unidad' la cantidad debe ser entera"
+                                    : undefined
+                            }
+                        />
 
-                            <TextField
-                                label="Nota"
-                                value={note}
-                                onChange={(e) => setNote(e.target.value)}
-                                multiline
-                                minRows={2}
+                        <FormControl>
+                            <InputLabel id="unit-label">Unidad</InputLabel>
+                            <Select
+                                labelId="unit-label"
+                                label="Unidad"
+                                value={unit}
+                                onChange={(e) => setUnit(String(e.target.value))}
+                            >
+                                {UNIT_OPTIONS.map((u) => (
+                                    <MenuItem key={u} value={u}>
+                                        {u}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+
+                        <TextField
+                            label="Nota"
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
+                            placeholder="Observaciones"
+                        />
+                    </Box>
+
+                    {/* Fila secundaria: modo de entrada + estado/peso + botón registrar */}
+                    <Box display="flex" alignItems="center" gap={2} mt={2}>
+                        <ToggleButtonGroup
+                            exclusive
+                            size="small"
+                            value={mode}
+                            onChange={(_, v: Mode | null) => {
+                                if (v) setMode(v);
+                            }}
+                        >
+                            <ToggleButton value="scale" disabled={!scaleWs || unit === "unidad"}>
+                                Báscula
+                            </ToggleButton>
+                            <ToggleButton value="manual">Manual</ToggleButton>
+                        </ToggleButtonGroup>
+
+                        <Chip
+                            label={
+                                mode === "scale"
+                                    ? scale.connected
+                                        ? "Báscula conectada"
+                                        : "Báscula desconectada"
+                                    : "Entrada manual"
+                            }
+                            color={mode === "scale" && scale.connected ? "success" : "default"}
+                            variant="outlined"
+                        />
+
+                        {scaleWs && (
+                            <Chip
+                                label={`${scale.weight?.toFixed(3) || "0.000"} ${
+                                    scale.unit || ""
+                                }`}
+                                variant="outlined"
                             />
+                        )}
 
-                            <Button disabled={busy} variant="contained" onClick={submit}>Registrar entrada</Button>
-                        </Box>
-                    </CardContent>
-                </Card>
-            </Grid>
+                        <Box flex={1} />
 
-            <Grid item xs={12} md={4}>
+                        <Button
+                            disabled={busy}
+                            variant="contained"
+                            onClick={submit}
+                            sx={{ minWidth: 200 }}
+                        >
+                            Registrar entrada
+                        </Button>
+                    </Box>
+                </CardContent>
+            </Card>
+
+            {/* BLOQUE INFERIOR: igual estructura que CajaSalida */}
+            <Box p={2} display="grid" gridTemplateColumns="1fr 380px" gap={2}>
+                {/* Columna izquierda: placeholder para futura UI (igual que en salida) */}
                 <Paper sx={{ p: 2 }}>
-                    <Typography variant="subtitle1">Báscula</Typography>
-                    <Box mt={1} display="flex" gap={1} alignItems="center">
-                        <Chip label={scale.connected ? "Conectada" : "Desconectada"} color={scale.connected ? "success" : "default"} />
-                        <Chip label={`${scale.weight?.toFixed(3) || "0.000"} ${scale.unit || ""}`} />
-                    </Box>
-                    <Box p={2} display="grid" gridTemplateColumns="1fr 380px" gap={2}>
-                        {/* Columna izquierda: formulario existente de entrada (suma stock) */}
-                        <Paper sx={{ p:2 }}>
-                            {/* ...tu UI actual para registrar ENTRADA manual (que suma stock)... */}
-                        </Paper>
-
-                        {/* Columna derecha: albaranes de COMPRA pendientes */}
-                        <Suspense fallback={<Paper sx={{ p:2 }}>Cargando albaranes…</Paper>}>
-                            <PendingAlbaranesPanel type="incoming" sessionKey={getSessionKey()}/>
-                        </Suspense>
-                    </Box>
-                    <Typography variant="caption">WS: {scaleWs || "manual"}</Typography>
+                    {/* Aquí podrás poner listado, resumen de última entrada, etc. */}
                 </Paper>
-            </Grid>
-        </Grid>
+
+                {/* Columna derecha: albaranes de COMPRA pendientes */}
+                <Suspense fallback={<Paper sx={{ p: 2 }}>Cargando albaranes…</Paper>}>
+                    <PendingAlbaranesPanel
+                        type="incoming"
+                        sessionKey={getSessionKey()}
+                    />
+                </Suspense>
+            </Box>
+        </Box>
     );
 }
+

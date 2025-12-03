@@ -94,7 +94,7 @@ export default function ProcesosPage() {
                                 fontWeight: "bold",
                                 backgroundColor: "#f5f5f5",
                                 p: 1.5,
-                                borderLeft: "6px solid #4caf50",
+                                borderLeft: "6px solid #8A0018",
                             }}
                         >
                             {group.title}
@@ -125,7 +125,7 @@ export default function ProcesosPage() {
                                             key={p.sku}
                                             sx={{
                                                 backgroundColor: isMain
-                                                    ? "rgba(76, 175, 80, 0.15)" // verde suave
+                                                    ? "rgba(138, 0, 24, 0.15)" // rojo suave
                                                     : "inherit",
                                                 fontWeight: isMain ? "bold" : "normal",
                                             }}

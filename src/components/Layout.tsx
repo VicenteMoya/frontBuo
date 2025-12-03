@@ -19,47 +19,77 @@ const Layout: React.FC<{ children: React.ReactNode; title?: string }> = ({ child
 
     const isPath = (path: string) => loc.pathname === path;
 
+    // 👉 ESTILO UNIFICADO PARA LOS BOTONES DEL HEADER
+    const topButtonStyle = {
+        ml: 1,
+        backgroundColor: "#8A0018",
+        color: "white",
+        textTransform: "none",
+        fontWeight: 600,
+        borderRadius: 20,
+        px: 2.5,
+        "&:hover": {
+            backgroundColor: "#6a0012",
+        },
+        "&.Mui-disabled": {
+            backgroundColor: "#cccccc",
+            color: "#666666",
+        },
+    };
+
     return (
         <Box sx={{ flexGrow: 1 }}>
             <AppBar position="static" color="default" elevation={1}>
                 <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                        <Box component="img" src={logoBuo} alt="Logo" sx={{ height: 40 }} />
-                        <Box component="img" src={logoGroupymes} alt="Logo" sx={{ height: 40 }} />
+                        <Box component="img" src={logoBuo} alt="Logo" sx={{ height: 75 }} />
+                        <Box component="img" src={logoGroupymes} alt="Logo" sx={{ height: 100 }} />
                     </Box>
-                    <Box>
-                        <Button color="inherit" onClick={() => nav("/")} disabled={isPath("/")}>
-                            ENTRADA 📥ㅤ
-                        </Button>
-                        <Button color="inherit" onClick={() => nav("/ocr")} disabled={isPath("/ocr")}>
-                            OCR 👁ㅤ
-                        </Button>
+
+                    {/* 👉 BOTONES DEL MENÚ SUPERIOR (YA ESTILIZADOS) */}
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
                         <Button
-                            color="inherit"
+                            sx={topButtonStyle}
+                            onClick={() => nav("/")}
+                            disabled={isPath("/")}>
+                            ENTRADA
+                        </Button>
+
+                        <Button
+                            sx={topButtonStyle}
+                            onClick={() => nav("/ocr")}
+                            disabled={isPath("/ocr")}>
+                            OCR
+                        </Button>
+
+                        <Button
+                            sx={topButtonStyle}
                             onClick={() => nav("/movimientos")}
-                            disabled={isPath("/movimientos")}
-                        >
-                            MOVIMIENTOS 📦ㅤ
+                            disabled={isPath("/movimientos")}>
+                            MOVIMIENTOS
                         </Button>
 
-                        {/* 👇 NUEVO BOTÓN PROCESOS */}
                         <Button
-                            color="inherit"
+                            sx={topButtonStyle}
                             onClick={() => nav("/procesos")}
-                            disabled={isPath("/procesos")}
-                        >
-                            Procesos 👐🏻ㅤ
+                            disabled={isPath("/procesos")}>
+                            PROCESOS
                         </Button>
 
-                        <Button color="inherit" onClick={() => nav("/salida")} disabled={isPath("/salida")}>
-                            Salida 📤ㅤ
+                        <Button
+                            sx={topButtonStyle}
+                            onClick={() => nav("/salida")}
+                            disabled={isPath("/salida")}>
+                            SALIDA
                         </Button>
-                        <Button color="inherit" onClick={handleLogout}>
-                            Cerrar sesión 🔐
+
+                        <Button sx={topButtonStyle} onClick={handleLogout}>
+                            Cerrar sesión
                         </Button>
                     </Box>
                 </Toolbar>
             </AppBar>
+
             <Box sx={{ p: 2 }}>{children}</Box>
         </Box>
     );
