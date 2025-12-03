@@ -29,17 +29,17 @@ const Layout: React.FC<{ children: React.ReactNode; title?: string }> = ({ child
                     </Box>
                     <Box>
                         <Button color="inherit" onClick={() => nav("/")} disabled={isPath("/")}>
-                            Entrada
+                            ENTRADA 📥ㅤ
                         </Button>
                         <Button color="inherit" onClick={() => nav("/ocr")} disabled={isPath("/ocr")}>
-                            OCR
+                            OCR 👁ㅤ
                         </Button>
                         <Button
                             color="inherit"
                             onClick={() => nav("/movimientos")}
                             disabled={isPath("/movimientos")}
                         >
-                            MOVIMIENTOS
+                            MOVIMIENTOS 📦ㅤ
                         </Button>
 
                         {/* 👇 NUEVO BOTÓN PROCESOS */}
@@ -48,14 +48,14 @@ const Layout: React.FC<{ children: React.ReactNode; title?: string }> = ({ child
                             onClick={() => nav("/procesos")}
                             disabled={isPath("/procesos")}
                         >
-                            Procesos
+                            Procesos 👐🏻ㅤ
                         </Button>
 
                         <Button color="inherit" onClick={() => nav("/salida")} disabled={isPath("/salida")}>
-                            Salida
+                            Salida 📤ㅤ
                         </Button>
                         <Button color="inherit" onClick={handleLogout}>
-                            Cerrar sesión
+                            Cerrar sesión 🔐
                         </Button>
                     </Box>
                 </Toolbar>
