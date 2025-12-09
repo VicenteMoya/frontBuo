@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { Box, Button, Card, CardContent, Typography, Alert } from "@mui/material";
+import {
+    Box,
+    Button,
+    Card,
+    CardContent,
+    Typography,
+    Alert,
+    ToggleButtonGroup,
+    ToggleButton,
+} from "@mui/material";
 import api from "../api/axios";
 import { useNavigate } from 'react-router-dom';
 import type { OcrResult } from "../api/types.ts";
@@ -10,7 +19,9 @@ export default function OCRAlbaran() {
     const [msg, setMsg] = useState<{ type: "success" | "error" | "info", text: string } | null>(null);
     const [busy, setBusy] = useState(false);
 
-    // ⬅️ El hook va a nivel de componente, no dentro de la función:
+    // tipo de OCR seleccionado
+    const [ocrType, setOcrType] = useState<"cash_unide" | "villar_munoz" | "whatsapp">("cash_unide");
+
     const nav = useNavigate();
 
     const onUpload = async () => {
@@ -23,14 +34,14 @@ export default function OCRAlbaran() {
         try {
             const fd = new FormData();
             fd.append("file", file);
-            // Añadimos la clave de sesión para que el backend etiquete el albarán a esta sesión
             fd.append("session_key", getSessionKey());
+            // 👇 nuevo: mandamos el tipo al backend
+            fd.append("ocr_type", ocrType);
 
             const r = await api.post("/albaranes/ocr", fd, {
                 headers: { "Content-Type": "multipart/form-data" }
             });
 
-            // Aceptamos 200 aunque items sea [] y navegamos a revisión
             const data = (r?.data || {}) as OcrResult;
             const items = Array.isArray(data.items) ? data.items : [];
 
@@ -60,16 +71,58 @@ export default function OCRAlbaran() {
             <Card>
                 <CardContent>
                     <Typography variant="h6">OCR de Albarán</Typography>
-                    {msg && <Alert severity={msg.type} onClose={() => setMsg(null)} sx={{ mt: 2 }}>{msg.text}</Alert>}
 
-                    <input
-                        type="file"
-                        accept="image/*,application/pdf"
-                        onChange={(e) => setFile(e.target.files?.[0] || null)}
-                    />
+                    {msg && (
+                        <Alert
+                            severity={msg.type}
+                            onClose={() => setMsg(null)}
+                            sx={{ mt: 2 }}
+                        >
+                            {msg.text}
+                        </Alert>
+                    )}
+
+                    {/* Selector de tipo de albarán */}
+                    <Box sx={{ mt: 2 }}>
+                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                            Tipo de albarán
+                        </Typography>
+
+                        <ToggleButtonGroup
+                            value={ocrType}
+                            exclusive
+                            onChange={(_, value) => {
+                                if (value) setOcrType(value);
+                            }}
+                            size="small"
+                        >
+                            <ToggleButton value="cash_unide">
+                                Cash Unide
+                            </ToggleButton>
+                            <ToggleButton value="villar_munoz">
+                                Villar Muñoz
+                            </ToggleButton>
+                            <ToggleButton value="whatsapp">
+                                WhatsApp
+                            </ToggleButton>
+                        </ToggleButtonGroup>
+                    </Box>
+
+                    {/* Selector de archivo */}
+                    <Box sx={{ mt: 3 }}>
+                        <input
+                            type="file"
+                            accept="image/*,application/pdf"
+                            onChange={(e) => setFile(e.target.files?.[0] || null)}
+                        />
+                    </Box>
 
                     <Box sx={{ mt: 2 }}>
-                        <Button variant="contained" disabled={!file || busy} onClick={onUpload}>
+                        <Button
+                            variant="contained"
+                            disabled={!file || busy}
+                            onClick={onUpload}
+                        >
                             Analizar
                         </Button>
                     </Box>
