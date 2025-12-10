@@ -79,7 +79,11 @@ export default function CajaEntrada() {
                 setSku(p.sku);
                 setUnit(p.unit);
                 setMsg({ type: "success", text: `SKU ${code} leído` });
-            } else setMsg({ type: "error", text: `Código ${code} no corresponde a un SKU` });
+            } else
+                setMsg({
+                    type: "error",
+                    text: `Código ${code} no corresponde a un SKU`,
+                });
         },
         [products]
     );
@@ -133,7 +137,9 @@ export default function CajaEntrada() {
             const resp = await api.post("/incoming", body);
             setMsg({
                 type: "success",
-                text: `Entrada registrada. Lote ${resp.data?.lot?.lot_code || ""}`,
+                text: `Entrada registrada. Lote ${
+                    resp.data?.lot?.lot_code || ""
+                }`,
             });
             setQty(0);
             setNote("");
@@ -242,7 +248,10 @@ export default function CajaEntrada() {
                                 if (v) setMode(v);
                             }}
                         >
-                            <ToggleButton value="scale" disabled={!scaleWs || unit === "unidad"}>
+                            <ToggleButton
+                                value="scale"
+                                disabled={!scaleWs || unit === "unidad"}
+                            >
                                 Báscula
                             </ToggleButton>
                             <ToggleButton value="manual">Manual</ToggleButton>
@@ -256,7 +265,9 @@ export default function CajaEntrada() {
                                         : "Báscula desconectada"
                                     : "Entrada manual"
                             }
-                            color={mode === "scale" && scale.connected ? "success" : "default"}
+                            color={
+                                mode === "scale" && scale.connected ? "success" : "default"
+                            }
                             variant="outlined"
                         />
 
@@ -283,14 +294,8 @@ export default function CajaEntrada() {
                 </CardContent>
             </Card>
 
-            {/* BLOQUE INFERIOR: igual estructura que CajaSalida */}
-            <Box p={2} display="grid" gridTemplateColumns="1fr 380px" gap={2}>
-                {/* Columna izquierda: placeholder para futura UI (igual que en salida) */}
-                <Paper sx={{ p: 2 }}>
-                    {/* Aquí podrás poner listado, resumen de última entrada, etc. */}
-                </Paper>
-
-                {/* Columna derecha: albaranes de COMPRA pendientes */}
+            {/* BLOQUE INFERIOR: ahora SOLO albaranes pendientes ocupando todo el ancho */}
+            <Box mt={2}>
                 <Suspense fallback={<Paper sx={{ p: 2 }}>Cargando albaranes…</Paper>}>
                     <PendingAlbaranesPanel
                         type="incoming"
@@ -301,4 +306,3 @@ export default function CajaEntrada() {
         </Box>
     );
 }
-

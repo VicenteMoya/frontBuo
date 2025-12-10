@@ -140,6 +140,8 @@ export default function CajaSalida() {
                                 if (val) {
                                     setSku(val.sku);
                                     if (val.unit) setUnit(val.unit);
+                                } else {
+                                    setSku("");
                                 }
                             }}
                             isOptionEqualToValue={(o, v) => o?.sku === v?.sku}
@@ -165,7 +167,7 @@ export default function CajaSalida() {
                                 labelId="unit-label"
                                 label="Unidad"
                                 value={unit}
-                                onChange={(e) => setUnit(e.target.value)}
+                                onChange={(e) => setUnit(e.target.value as string)}
                             >
                                 {UNITS.map((u) => (
                                     <MenuItem key={u} value={u}>
@@ -188,7 +190,10 @@ export default function CajaSalida() {
                     <Box display="flex" alignItems="center" gap={2} mt={2}>
                         <FormControlLabel
                             control={
-                                <Switch checked={useScale} onChange={(e) => setUseScale(e.target.checked)} />
+                                <Switch
+                                    checked={useScale}
+                                    onChange={(e) => setUseScale(e.target.checked)}
+                                />
                             }
                             label="Usar báscula"
                         />
@@ -215,12 +220,8 @@ export default function CajaSalida() {
                 </CardContent>
             </Card>
 
-            {/* === BLOQUE INFERIOR — Igual que ENTRADA === */}
-            <Box p={2} display="grid" gridTemplateColumns="1fr 380px" gap={2}>
-                {/* Panel futuro vacío */}
-                <Paper sx={{ p: 2 }} />
-
-                {/* Panel de albaranes pendientes */}
+            {/* === BLOQUE INFERIOR — Albaranes de VENTA pendientes a lo ancho === */}
+            <Box mt={3}>
                 <Suspense fallback={<Paper sx={{ p: 2 }}>Cargando albaranes…</Paper>}>
                     <PendingAlbaranesPanel
                         type="outgoing"
@@ -241,3 +242,4 @@ export default function CajaSalida() {
         </Box>
     );
 }
+
