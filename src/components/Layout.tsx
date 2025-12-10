@@ -1,5 +1,5 @@
 import React from "react";
-import { AppBar, Box, Button, Toolbar } from "@mui/material";
+import { AppBar, Box, Button, Toolbar, useMediaQuery, useTheme } from "@mui/material";
 import { useAuth } from "../auth/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import logoBuo from "../assets/logo_combo.png";
@@ -9,6 +9,8 @@ const Layout: React.FC<{ children: React.ReactNode; title?: string }> = ({ child
     const { logout } = useAuth();
     const nav = useNavigate();
     const loc = useLocation();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
     const handleLogout = () => {
         logout();
@@ -19,15 +21,17 @@ const Layout: React.FC<{ children: React.ReactNode; title?: string }> = ({ child
 
     const isPath = (path: string) => loc.pathname === path;
 
-    // 👉 ESTILO UNIFICADO PARA LOS BOTONES DEL HEADER
+    // 👉 ESTILO UNIFICADO PARA LOS BOTONES DEL HEADER (ajustado a móvil)
     const topButtonStyle = {
-        ml: 1,
+        ml: { xs: 0.5, md: 1 },
         backgroundColor: "#8A0018",
         color: "white",
-        textTransform: "none",
+        textTransform: "none" as const,
         fontWeight: 600,
         borderRadius: 20,
-        px: 2.5,
+        px: { xs: 1.5, md: 2.5 },
+        fontSize: isMobile ? "0.7rem" : "0.9rem",
+        whiteSpace: "nowrap" as const,
         "&:hover": {
             backgroundColor: "#6a0012",
         },
@@ -40,14 +44,42 @@ const Layout: React.FC<{ children: React.ReactNode; title?: string }> = ({ child
     return (
         <Box sx={{ flexGrow: 1 }}>
             <AppBar position="static" color="default" elevation={1}>
-                <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                        <Box component="img" src={logoBuo} alt="Logo" sx={{ height: 75 }} />
-                        <Box component="img" src={logoGroupymes} alt="Logo" sx={{ height: 100 }} />
+                <Toolbar
+                    sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        px: { xs: 1.5, md: 3 },
+                        minHeight: { xs: 56, sm: 64 },
+                    }}
+                >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, md: 2 } }}>
+                        <Box
+                            component="img"
+                            src={logoBuo}
+                            alt="Logo Buo"
+                            sx={{ height: { xs: 40, sm: 60, md: 75 } }}
+                        />
+                        <Box
+                            component="img"
+                            src={logoGroupymes}
+                            alt="Logo Groupymes"
+                            sx={{ height: { xs: 55, sm: 80, md: 100 } }}
+                        />
                     </Box>
 
                     {/* 👉 BOTONES DEL MENÚ SUPERIOR (YA ESTILIZADOS) */}
-                    <Box sx={{ display: "flex", alignItems: "center" }}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            overflowX: { xs: "auto", md: "visible" },
+                            maxWidth: { xs: "60%", sm: "70%", md: "none" },
+                            pl: { xs: 1, md: 0 },
+                            "&::-webkit-scrollbar": { display: "none" },
+                            scrollbarWidth: "none",
+                        }}
+                    >
                         <Button
                             sx={topButtonStyle}
                             onClick={() => nav("/")}
@@ -84,7 +116,7 @@ const Layout: React.FC<{ children: React.ReactNode; title?: string }> = ({ child
                         </Button>
 
                         <Button sx={topButtonStyle} onClick={handleLogout}>
-                            Cerrar sesión
+                            CERRAR SESIÓN
                         </Button>
                     </Box>
                 </Toolbar>

@@ -104,6 +104,14 @@ export default function OCRReview() {
     return (
         <Box p={2} component={Paper}>
             <Typography variant="h6" mb={2}>Revisión del albarán</Typography>
+            <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => nav('/ocr')}
+                sx={{ mb: 2 }}
+            >
+                ← Atrás
+            </Button>
 
             <Box display="flex" gap={2} mb={2}>
                 <TextField

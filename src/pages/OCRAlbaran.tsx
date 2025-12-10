@@ -96,13 +96,52 @@ export default function OCRAlbaran() {
                             }}
                             size="small"
                         >
-                            <ToggleButton value="cash_unide">
+                            <ToggleButton
+                                value="cash_unide"
+                                sx={{
+                                    textTransform: "none",
+                                    fontWeight: ocrType === "cash_unide" ? 700 : 400,
+                                    bgcolor: ocrType === "cash_unide" ? "#1565c0" : "#e3f2fd", // azul oscuro seleccionado, azul muy claro sin seleccionar
+                                    color: ocrType === "cash_unide" ? "#ffffff" : "#0d47a1",
+                                    "&:hover": {
+                                        bgcolor: ocrType === "cash_unide" ? "#0d47a1" : "#bbdefb",
+                                    },
+                                    borderRadius: 2,
+                                    px: 2,
+                                }}
+                            >
                                 Cash Unide
                             </ToggleButton>
-                            <ToggleButton value="villar_munoz">
+                            <ToggleButton
+                                value="villar_munoz"
+                                sx={{
+                                    textTransform: "none",
+                                    fontWeight: ocrType === "villar_munoz" ? 700 : 400,
+                                    bgcolor: ocrType === "villar_munoz" ? "#8A0018" : "#ffe4f2", // 8A0018 seleccionado, rosa muy claro sin seleccionar
+                                    color: ocrType === "villar_munoz" ? "#ffffff" : "#8A0018",
+                                    "&:hover": {
+                                        bgcolor: ocrType === "villar_munoz" ? "#5c0010" : "#ffc6e3",
+                                    },
+                                    borderRadius: 2,
+                                    px: 2,
+                                }}
+                            >
                                 Villar Muñoz
                             </ToggleButton>
-                            <ToggleButton value="whatsapp">
+                            <ToggleButton
+                                value="whatsapp"
+                                sx={{
+                                    textTransform: "none",
+                                    fontWeight: ocrType === "whatsapp" ? 700 : 400,
+                                    bgcolor: ocrType === "whatsapp" ? "#1b5e20" : "#e8f5e9", // verde oscuro seleccionado, verde muy claro sin seleccionar
+                                    color: ocrType === "whatsapp" ? "#ffffff" : "#1b5e20",
+                                    "&:hover": {
+                                        bgcolor: ocrType === "whatsapp" ? "#104116" : "#c8e6c9",
+                                    },
+                                    borderRadius: 2,
+                                    px: 2,
+                                }}
+                            >
                                 WhatsApp
                             </ToggleButton>
                         </ToggleButtonGroup>
