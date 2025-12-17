@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { AppBar, Box, Button, Toolbar, useMediaQuery, useTheme } from "@mui/material";
 import { useAuth } from "../auth/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -6,7 +6,7 @@ import logoBuo from "../assets/logo_combo.png";
 import logoGroupymes from "../assets/grpy.png";
 
 const Layout: React.FC<{ children: React.ReactNode; title?: string }> = ({ children }) => {
-    const { logout } = useAuth();
+    const { logout, role } = useAuth(); // ✅ role
     const nav = useNavigate();
     const loc = useLocation();
     const theme = useTheme();
@@ -21,7 +21,24 @@ const Layout: React.FC<{ children: React.ReactNode; title?: string }> = ({ child
 
     const isPath = (path: string) => loc.pathname === path;
 
-    // 👉 ESTILO UNIFICADO PARA LOS BOTONES DEL HEADER (ajustado a móvil)
+    // ✅ Guardia de navegación para pedido_only
+    useEffect(() => {
+        if (role === "pedido_only") {
+            const path = loc.pathname;
+
+            const allowed =
+                path === "/ocr" ||
+                path === "/ocr/review" ||
+                path === "/ocr/review2" ||
+                path === "/login";
+
+            if (!allowed) {
+                nav("/ocr", { replace: true });
+            }
+        }
+    }, [role, loc.pathname, nav]);
+
+
     const topButtonStyle = {
         ml: { xs: 0.5, md: 1 },
         backgroundColor: "#8A0018",
@@ -40,6 +57,8 @@ const Layout: React.FC<{ children: React.ReactNode; title?: string }> = ({ child
             color: "#666666",
         },
     };
+
+    const isPedidoOnly = role === "pedido_only";
 
     return (
         <Box sx={{ flexGrow: 1 }}>
@@ -68,7 +87,6 @@ const Layout: React.FC<{ children: React.ReactNode; title?: string }> = ({ child
                         />
                     </Box>
 
-                    {/* 👉 BOTONES DEL MENÚ SUPERIOR (YA ESTILIZADOS) */}
                     <Box
                         sx={{
                             display: "flex",
@@ -80,41 +98,47 @@ const Layout: React.FC<{ children: React.ReactNode; title?: string }> = ({ child
                             scrollbarWidth: "none",
                         }}
                     >
-                        <Button
-                            sx={topButtonStyle}
-                            onClick={() => nav("/")}
-                            disabled={isPath("/")}>
-                            ENTRADA
-                        </Button>
+                        {/* ✅ ADMIN: menú completo */}
+                        {!isPedidoOnly && (
+                            <>
+                                <Button sx={topButtonStyle} onClick={() => nav("/")} disabled={isPath("/")}>
+                                    ENTRADA
+                                </Button>
 
-                        <Button
-                            sx={topButtonStyle}
-                            onClick={() => nav("/ocr")}
-                            disabled={isPath("/ocr")}>
-                            OCR
-                        </Button>
+                                <Button sx={topButtonStyle} onClick={() => nav("/ocr")} disabled={isPath("/ocr")}>
+                                    REALIZAR PEDIDO
+                                </Button>
 
-                        <Button
-                            sx={topButtonStyle}
-                            onClick={() => nav("/movimientos")}
-                            disabled={isPath("/movimientos")}>
-                            MOVIMIENTOS
-                        </Button>
+                                <Button
+                                    sx={topButtonStyle}
+                                    onClick={() => nav("/movimientos")}
+                                    disabled={isPath("/movimientos")}
+                                >
+                                    MOVIMIENTOS
+                                </Button>
 
-                        <Button
-                            sx={topButtonStyle}
-                            onClick={() => nav("/procesos")}
-                            disabled={isPath("/procesos")}>
-                            PROCESOS
-                        </Button>
+                                <Button
+                                    sx={topButtonStyle}
+                                    onClick={() => nav("/procesos")}
+                                    disabled={isPath("/procesos")}
+                                >
+                                    PROCESOS
+                                </Button>
 
-                        <Button
-                            sx={topButtonStyle}
-                            onClick={() => nav("/salida")}
-                            disabled={isPath("/salida")}>
-                            SALIDA
-                        </Button>
+                                <Button sx={topButtonStyle} onClick={() => nav("/salida")} disabled={isPath("/salida")}>
+                                    SALIDA
+                                </Button>
+                            </>
+                        )}
 
+                        {/* ✅ pedido_only: solo /ocr */}
+                        {isPedidoOnly && (
+                            <Button sx={topButtonStyle} onClick={() => nav("/ocr")} disabled={isPath("/ocr")}>
+                                REALIZAR PEDIDO
+                            </Button>
+                        )}
+
+                        {/* ✅ siempre visible */}
                         <Button sx={topButtonStyle} onClick={handleLogout}>
                             CERRAR SESIÓN
                         </Button>

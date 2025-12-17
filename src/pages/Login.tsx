@@ -14,19 +14,13 @@ import { useAuth } from "../auth/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 function extractErrorMessage(err: any): string {
-    // Intenta sacar string de las respuestas típicas de FastAPI (detail puede ser string o array)
     const d = err?.response?.data?.detail ?? err?.message ?? err?.toString?.();
     if (!d) return "Error desconocido";
-
     if (typeof d === "string") return d;
-
     if (Array.isArray(d)) {
-        // detail: [{loc, msg, type, input}, ...]
         const msgs = d.map((x) => (x?.msg ? String(x.msg) : JSON.stringify(x)));
         return msgs.join(" · ");
     }
-
-    // objeto suelto
     return JSON.stringify(d);
 }
 
@@ -43,16 +37,16 @@ export default function Login() {
         setBusy(true);
         setMsg(null);
         try {
-            // 1) Tu API (por cómo responde) espera JSON: { username, password }
             let r = await api.post("/auth/login", { username, password });
 
-            // si tu API devuelve access_token, úsalo; si devuelve token, úsalo
             const token = r.data?.access_token || r.data?.token;
+            const role = r.data?.user?.role; // 👈 NUEVO
+
             if (!token) throw new Error("No se recibió el token");
-            login(token);
-            nav("/", { replace: true });
+
+            login(token, role); // 👈 CAMBIO CLAVE
+            nav(role === "pedido_only" ? "/ocr" : "/", { replace: true }); // 👈 REDIRECCIÓN
         } catch (err: any) {
-            // Si el backend estuviera esperando form-urlencoded, reintenta automáticamente
             if (err?.response?.status === 422) {
                 try {
                     const body = new URLSearchParams();
@@ -61,10 +55,14 @@ export default function Login() {
                     const r2 = await api.post("/auth/login", body, {
                         headers: { "Content-Type": "application/x-www-form-urlencoded" },
                     });
+
                     const token = r2.data?.access_token || r2.data?.token;
+                    const role = r2.data?.user?.role; // 👈 TAMBIÉN AQUÍ
+
                     if (!token) throw new Error("No se recibió el token");
-                    login(token);
-                    nav("/", { replace: true });
+
+                    login(token, role);
+                    nav(role === "pedido_only" ? "/ocr" : "/", { replace: true });
                     return;
                 } catch (err2: any) {
                     setMsg(extractErrorMessage(err2));
@@ -89,7 +87,6 @@ export default function Login() {
                 backgroundColor: "#f5f5f5",
             }}
         >
-            {/* Imagen de portada encima del formulario */}
             <Box
                 component="img"
                 src={portada}
@@ -100,7 +97,7 @@ export default function Login() {
                     maxWidth: 360,
                     mb: 2,
                     borderRadius: 2,
-                    display: { xs: "none", sm: "block" }, // opcional: ocultar en móviles
+                    display: { xs: "none", sm: "block" },
                 }}
             />
 
@@ -112,7 +109,7 @@ export default function Login() {
 
                     {msg && (
                         <Alert severity="error" sx={{ mb: 2 }}>
-                            {msg} {/* 👈 Nunca pasar objetos aquí */}
+                            {msg}
                         </Alert>
                     )}
 

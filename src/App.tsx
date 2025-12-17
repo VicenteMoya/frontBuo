@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import theme from "./theme";
 
+import OCRReview2 from "./pages/OCRReview2";
 import { AuthProvider } from "./auth/AuthContext";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import { SessionGuard } from "./auth/SessionGuard";
@@ -49,6 +50,7 @@ export default function App() {
                             <Route path="/movimientos" element={<Movimientos />} />
                             <Route path="/procesos" element={<ProcesosPage />} /> {/* 👈 NUEVA RUTA */}
                             <Route path="/salida" element={<CajaSalida />} />
+                            <Route path="/ocr/review2" element={<OCRReview2 />} />
                         </Route>
 
                         <Route path="*" element={<Navigate to="/login" replace />} />

@@ -19,8 +19,8 @@ export default function OCRAlbaran() {
     const [msg, setMsg] = useState<{ type: "success" | "error" | "info", text: string } | null>(null);
     const [busy, setBusy] = useState(false);
 
-    // tipo de OCR seleccionado
-    const [ocrType, setOcrType] = useState<"cash_unide" | "villar_munoz" | "whatsapp">("cash_unide");
+    const [ocrType, setOcrType] =
+        useState<"cash_unide" | "villar_munoz" | "whatsapp">("cash_unide");
 
     const nav = useNavigate();
 
@@ -35,7 +35,6 @@ export default function OCRAlbaran() {
             const fd = new FormData();
             fd.append("file", file);
             fd.append("session_key", getSessionKey());
-            // 👇 nuevo: mandamos el tipo al backend
             fd.append("ocr_type", ocrType);
 
             const r = await api.post("/albaranes/ocr", fd, {
@@ -88,63 +87,70 @@ export default function OCRAlbaran() {
                             Tipo de albarán
                         </Typography>
 
-                        <ToggleButtonGroup
-                            value={ocrType}
-                            exclusive
-                            onChange={(_, value) => {
-                                if (value) setOcrType(value);
-                            }}
-                            size="small"
-                        >
-                            <ToggleButton
-                                value="cash_unide"
-                                sx={{
-                                    textTransform: "none",
-                                    fontWeight: ocrType === "cash_unide" ? 700 : 400,
-                                    bgcolor: ocrType === "cash_unide" ? "#1565c0" : "#e3f2fd", // azul oscuro seleccionado, azul muy claro sin seleccionar
-                                    color: ocrType === "cash_unide" ? "#ffffff" : "#0d47a1",
-                                    "&:hover": {
-                                        bgcolor: ocrType === "cash_unide" ? "#0d47a1" : "#bbdefb",
-                                    },
-                                    borderRadius: 2,
-                                    px: 2,
-                                }}
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                            <ToggleButtonGroup
+                                value={ocrType}
+                                exclusive
+                                onChange={(_, value) => value && setOcrType(value)}
+                                size="small"
                             >
-                                Cash Unide
-                            </ToggleButton>
-                            <ToggleButton
-                                value="villar_munoz"
-                                sx={{
-                                    textTransform: "none",
-                                    fontWeight: ocrType === "villar_munoz" ? 700 : 400,
-                                    bgcolor: ocrType === "villar_munoz" ? "#8A0018" : "#ffe4f2", // 8A0018 seleccionado, rosa muy claro sin seleccionar
-                                    color: ocrType === "villar_munoz" ? "#ffffff" : "#8A0018",
-                                    "&:hover": {
-                                        bgcolor: ocrType === "villar_munoz" ? "#5c0010" : "#ffc6e3",
-                                    },
-                                    borderRadius: 2,
-                                    px: 2,
-                                }}
+                                {/* 🔵 CASH UNIDE */}
+                                <ToggleButton
+                                    value="cash_unide"
+                                    sx={{
+                                        color: "#1976d2",
+                                        borderColor: "#1976d2",
+                                        "&.Mui-selected": {
+                                            backgroundColor: "#1976d2",
+                                            color: "#fff",
+                                            "&:hover": { backgroundColor: "#115293" },
+                                        },
+                                    }}
+                                >
+                                    Cash Unide
+                                </ToggleButton>
+
+                                {/* 🟡 VILLAR MUÑOZ */}
+                                <ToggleButton
+                                    value="villar_munoz"
+                                    sx={{
+                                        color: "#f9a825",
+                                        borderColor: "#f9a825",
+                                        "&.Mui-selected": {
+                                            backgroundColor: "#f9a825",
+                                            color: "#000",
+                                            "&:hover": { backgroundColor: "#c17900" },
+                                        },
+                                    }}
+                                >
+                                    Villar Muñoz
+                                </ToggleButton>
+
+                                {/* 🟢 WHATSAPP */}
+                                <ToggleButton
+                                    value="whatsapp"
+                                    sx={{
+                                        color: "#2e7d32",
+                                        borderColor: "#2e7d32",
+                                        "&.Mui-selected": {
+                                            backgroundColor: "#2e7d32",
+                                            color: "#fff",
+                                            "&:hover": { backgroundColor: "#1b5e20" },
+                                        },
+                                    }}
+                                >
+                                    WhatsApp
+                                </ToggleButton>
+                            </ToggleButtonGroup>
+
+                            {/* BOTÓN MANUAL */}
+                            <Button
+                                variant="outlined"
+                                onClick={() => nav("/ocr/review2")}
                             >
-                                Villar Muñoz
-                            </ToggleButton>
-                            <ToggleButton
-                                value="whatsapp"
-                                sx={{
-                                    textTransform: "none",
-                                    fontWeight: ocrType === "whatsapp" ? 700 : 400,
-                                    bgcolor: ocrType === "whatsapp" ? "#1b5e20" : "#e8f5e9", // verde oscuro seleccionado, verde muy claro sin seleccionar
-                                    color: ocrType === "whatsapp" ? "#ffffff" : "#1b5e20",
-                                    "&:hover": {
-                                        bgcolor: ocrType === "whatsapp" ? "#104116" : "#c8e6c9",
-                                    },
-                                    borderRadius: 2,
-                                    px: 2,
-                                }}
-                            >
-                                WhatsApp
-                            </ToggleButton>
-                        </ToggleButtonGroup>
+                                MANUAL
+                            </Button>
+                        </Box>
                     </Box>
 
                     {/* Selector de archivo */}
