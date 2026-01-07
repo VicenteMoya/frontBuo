@@ -16,6 +16,7 @@ import {
     Paper,
 } from "@mui/material";
 import Autocomplete from "@mui/material/Autocomplete";
+import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { useScanner } from "../hooks/useScanner";
 import { useScale } from "../hooks/useScale";
@@ -33,6 +34,8 @@ type Mode = "scale" | "manual";
 const UNIT_OPTIONS = ["unidad", "kg"];
 
 export default function CajaEntrada() {
+    const navigate = useNavigate();
+
     const [products, setProducts] = useState<Product[]>([]);
     const [sku, setSku] = useState<string>("");
     const [qty, setQty] = useState<number>(0);
@@ -238,7 +241,7 @@ export default function CajaEntrada() {
                         />
                     </Box>
 
-                    {/* Fila secundaria: modo de entrada + estado/peso + botón registrar */}
+                    {/* Fila secundaria: modo de entrada + estado/peso + botones */}
                     <Box display="flex" alignItems="center" gap={2} mt={2}>
                         <ToggleButtonGroup
                             exclusive
@@ -282,6 +285,25 @@ export default function CajaEntrada() {
 
                         <Box flex={1} />
 
+                        {/* ✅ NUEVO: Barcode */}
+                        <Button
+                            disabled={busy}
+                            variant="outlined"
+                            onClick={() => navigate("/barcode-ticket?type=incoming")}
+                            sx={{ minWidth: 220 }}
+                        >
+                            Código de barras
+                        </Button>
+
+                        <Button
+                            disabled={busy}
+                            variant="outlined"
+                            onClick={() => navigate("/barcode-camera?type=incoming")}
+                            sx={{ minWidth: 220 }}
+                        >
+                            Escanear con cámara
+                        </Button>
+
                         <Button
                             disabled={busy}
                             variant="contained"
@@ -297,10 +319,7 @@ export default function CajaEntrada() {
             {/* BLOQUE INFERIOR: ahora SOLO albaranes pendientes ocupando todo el ancho */}
             <Box mt={2}>
                 <Suspense fallback={<Paper sx={{ p: 2 }}>Cargando albaranes…</Paper>}>
-                    <PendingAlbaranesPanel
-                        type="incoming"
-                        sessionKey={getSessionKey()}
-                    />
+                    <PendingAlbaranesPanel type="incoming" sessionKey={getSessionKey()} />
                 </Suspense>
             </Box>
         </Box>

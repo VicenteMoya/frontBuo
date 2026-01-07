@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import theme from "./theme";
+import BarcodeCameraTicket from "./pages/BarcodeCameraTicket";
 
 import OCRReview2 from "./pages/OCRReview2";
 import { AuthProvider } from "./auth/AuthContext";
@@ -19,6 +20,9 @@ import AlbaranDetail from "./pages/AlbaranDetail.tsx";
 import Movimientos from "./pages/Movimientos";
 import CajaSalida from "./pages/CajaSalida.tsx";
 import ProcesosPage from "./pages/Procesos.tsx";
+
+// ✅ NUEVA PÁGINA
+import BarcodeTicket from "./pages/BarcodeTicket";
 
 function Shell() {
     return (
@@ -48,9 +52,14 @@ export default function App() {
                             <Route path="/albaranes" element={<AlbaranesList />} />
                             <Route path="/albaranes/:id" element={<AlbaranDetail />} />
                             <Route path="/movimientos" element={<Movimientos />} />
-                            <Route path="/procesos" element={<ProcesosPage />} /> {/* 👈 NUEVA RUTA */}
+                            <Route path="/procesos" element={<ProcesosPage />} />
                             <Route path="/salida" element={<CajaSalida />} />
                             <Route path="/ocr/review2" element={<OCRReview2 />} />
+                            <Route path="/barcode-camera" element={<BarcodeCameraTicket />} />
+
+
+                            {/* ✅ RUTA BARCODE */}
+                            <Route path="/barcode-ticket" element={<BarcodeTicket />} />
                         </Route>
 
                         <Route path="*" element={<Navigate to="/login" replace />} />
@@ -60,4 +69,3 @@ export default function App() {
         </AuthProvider>
     );
 }
-

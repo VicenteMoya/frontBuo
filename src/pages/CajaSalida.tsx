@@ -6,18 +6,17 @@ import {
     CardContent,
     TextField,
     MenuItem,
-    Typography,
     Alert,
     Snackbar,
     Switch,
     FormControlLabel,
     Paper,
-    Chip,
     FormControl,
     InputLabel,
     Select
 } from "@mui/material";
 import Autocomplete from "@mui/material/Autocomplete";
+import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { getSessionKey } from "../utils/sessionKey";
 
@@ -30,6 +29,8 @@ type Product = { sku: string; name: string; unit?: string };
 const UNITS = ["unidad", "kg"];
 
 export default function CajaSalida() {
+    const navigate = useNavigate();
+
     const [catalog, setCatalog] = useState<Product[]>([]);
     const [sku, setSku] = useState<string>("");
     const [unit, setUnit] = useState<string>("unidad");
@@ -207,6 +208,25 @@ export default function CajaSalida() {
                         </Button>
 
                         <Box flex={1} />
+
+                        {/* ✅ NUEVO: Barcode */}
+                        <Button
+                            variant="outlined"
+                            disabled={busy}
+                            onClick={() => navigate("/barcode-ticket?type=outgoing")}
+                            sx={{ minWidth: 220 }}
+                        >
+                            Código de barras
+                        </Button>
+
+                        <Button
+                            variant="outlined"
+                            disabled={busy}
+                            onClick={() => navigate("/barcode-camera?type=outgoing")}
+                            sx={{ minWidth: 220 }}
+                        >
+                            Escanear con cámara
+                        </Button>
 
                         <Button
                             variant="contained"
