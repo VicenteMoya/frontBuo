@@ -14,6 +14,9 @@ import {
     ToggleButton,
     ToggleButtonGroup,
     Paper,
+    Stack,
+    useMediaQuery,
+    useTheme,
 } from "@mui/material";
 import Autocomplete from "@mui/material/Autocomplete";
 import { useNavigate } from "react-router-dom";
@@ -35,6 +38,8 @@ const UNIT_OPTIONS = ["unidad", "kg"];
 
 export default function CajaEntrada() {
     const navigate = useNavigate();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
     const [products, setProducts] = useState<Product[]>([]);
     const [sku, setSku] = useState<string>("");
@@ -74,24 +79,6 @@ export default function CajaEntrada() {
         if (unit === "unidad" && mode === "scale") setMode("manual");
     }, [unit, mode]);
 
-    // scanner: si lee un SKU válido, lo selecciona y pone su unidad canónica
-    const onScan = useCallback(
-        (code: string) => {
-            const p = products.find((x) => x.sku === code) || null;
-            if (p) {
-                setSku(p.sku);
-                setUnit(p.unit);
-                setMsg({ type: "success", text: `SKU ${code} leído` });
-            } else
-                setMsg({
-                    type: "error",
-                    text: `Código ${code} no corresponde a un SKU`,
-                });
-        },
-        [products]
-    );
-    useScanner(onScan);
-
     const productOptions = useMemo(
         () =>
             products.map((p) => ({
@@ -101,10 +88,30 @@ export default function CajaEntrada() {
             })),
         [products]
     );
+
     const selectedProduct = useMemo(
         () => products.find((p) => p.sku === sku) || null,
         [products, sku]
     );
+
+    // scanner: si lee un SKU válido, lo selecciona y pone su unidad canónica
+    const onScan = useCallback(
+        (code: string) => {
+            const p = products.find((x) => x.sku === code) || null;
+            if (p) {
+                setSku(p.sku);
+                setUnit(p.unit);
+                setMsg({ type: "success", text: `SKU ${code} leído` });
+            } else {
+                setMsg({
+                    type: "error",
+                    text: `Código ${code} no corresponde a un SKU`,
+                });
+            }
+        },
+        [products]
+    );
+    useScanner(onScan);
 
     // helper: ¿la cantidad es válida según unidad?
     const isIntegerUnit = unit === "unidad";
@@ -140,9 +147,7 @@ export default function CajaEntrada() {
             const resp = await api.post("/incoming", body);
             setMsg({
                 type: "success",
-                text: `Entrada registrada. Lote ${
-                    resp.data?.lot?.lot_code || ""
-                }`,
+                text: `Entrada registrada. Lote ${resp.data?.lot?.lot_code || ""}`,
             });
             setQty(0);
             setNote("");
@@ -162,7 +167,7 @@ export default function CajaEntrada() {
     }, [selectedProduct]);
 
     return (
-        <Box sx={{ p: 2 }}>
+        <Box sx={{ p: { xs: 1, sm: 2 } }}>
             {msg && (
                 <Box mb={2}>
                     <Alert severity={msg.type} onClose={() => setMsg(null)}>
@@ -171,14 +176,16 @@ export default function CajaEntrada() {
                 </Box>
             )}
 
-            {/* CARD PRINCIPAL (mismo ancho que CajaSalida) */}
             <Card>
-                <CardContent>
-                    {/* Fila principal: Producto / Cantidad / Unidad / Nota */}
+                <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
+                    {/* FORM */}
                     <Box
                         display="grid"
-                        gridTemplateColumns="1.8fr 0.8fr 0.8fr 1.8fr"
-                        gap={2}
+                        gridTemplateColumns={{
+                            xs: "1fr",
+                            sm: "1.8fr 0.8fr 0.8fr 1.8fr",
+                        }}
+                        gap={{ xs: 1.5, sm: 2 }}
                         alignItems="center"
                     >
                         <Autocomplete
@@ -194,6 +201,7 @@ export default function CajaEntrada() {
                                     {...params}
                                     label="Producto (SKU — Nombre)"
                                     placeholder="Buscar producto"
+                                    size={isMobile ? "small" : "medium"}
                                 />
                             )}
                             value={productOptions.find((o) => o.sku === sku) || null}
@@ -215,9 +223,10 @@ export default function CajaEntrada() {
                                     ? "Para 'unidad' la cantidad debe ser entera"
                                     : undefined
                             }
+                            size={isMobile ? "small" : "medium"}
                         />
 
-                        <FormControl>
+                        <FormControl size={isMobile ? "small" : "medium"}>
                             <InputLabel id="unit-label">Unidad</InputLabel>
                             <Select
                                 labelId="unit-label"
@@ -238,85 +247,106 @@ export default function CajaEntrada() {
                             value={note}
                             onChange={(e) => setNote(e.target.value)}
                             placeholder="Observaciones"
+                            size={isMobile ? "small" : "medium"}
                         />
                     </Box>
 
-                    {/* Fila secundaria: modo de entrada + estado/peso + botones */}
-                    <Box display="flex" alignItems="center" gap={2} mt={2}>
-                        <ToggleButtonGroup
-                            exclusive
-                            size="small"
-                            value={mode}
-                            onChange={(_, v: Mode | null) => {
-                                if (v) setMode(v);
-                            }}
+                    {/* CONTROLES */}
+                    <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={{ xs: 1.25, sm: 2 }}
+                        alignItems={{ xs: "stretch", sm: "center" }}
+                        mt={2}
+                    >
+                        <Stack
+                            direction="row"
+                            spacing={1}
+                            alignItems="center"
+                            flexWrap="wrap"
+                            useFlexGap
                         >
-                            <ToggleButton
-                                value="scale"
-                                disabled={!scaleWs || unit === "unidad"}
+                            <ToggleButtonGroup
+                                exclusive
+                                size={isMobile ? "small" : "small"}
+                                value={mode}
+                                onChange={(_, v: Mode | null) => {
+                                    if (v) setMode(v);
+                                }}
                             >
-                                Báscula
-                            </ToggleButton>
-                            <ToggleButton value="manual">Manual</ToggleButton>
-                        </ToggleButtonGroup>
+                                <ToggleButton
+                                    value="scale"
+                                    disabled={!scaleWs || unit === "unidad"}
+                                >
+                                    Báscula
+                                </ToggleButton>
+                                <ToggleButton value="manual">Manual</ToggleButton>
+                            </ToggleButtonGroup>
 
-                        <Chip
-                            label={
-                                mode === "scale"
-                                    ? scale.connected
-                                        ? "Báscula conectada"
-                                        : "Báscula desconectada"
-                                    : "Entrada manual"
-                            }
-                            color={
-                                mode === "scale" && scale.connected ? "success" : "default"
-                            }
-                            variant="outlined"
-                        />
-
-                        {scaleWs && (
                             <Chip
-                                label={`${scale.weight?.toFixed(3) || "0.000"} ${
-                                    scale.unit || ""
-                                }`}
+                                label={
+                                    mode === "scale"
+                                        ? scale.connected
+                                            ? "Báscula conectada"
+                                            : "Báscula desconectada"
+                                        : "Entrada manual"
+                                }
+                                color={mode === "scale" && scale.connected ? "success" : "default"}
                                 variant="outlined"
+                                size={isMobile ? "small" : "medium"}
                             />
-                        )}
+
+                            {scaleWs && (
+                                <Chip
+                                    label={`${scale.weight?.toFixed(3) || "0.000"} ${scale.unit || ""}`}
+                                    variant="outlined"
+                                    size={isMobile ? "small" : "medium"}
+                                />
+                            )}
+                        </Stack>
 
                         <Box flex={1} />
 
-                        {/* ✅ NUEVO: Barcode */}
-                        <Button
-                            disabled={busy}
-                            variant="outlined"
-                            onClick={() => navigate("/barcode-ticket?type=incoming")}
-                            sx={{ minWidth: 220 }}
+                        {/* BOTONES: móvil en columna fullWidth */}
+                        <Stack
+                            direction={{ xs: "column", sm: "row" }}
+                            spacing={1}
+                            sx={{ width: { xs: "100%", sm: "auto" } }}
                         >
-                            Código de barras
-                        </Button>
+                            <Button
+                                disabled={busy}
+                                variant="outlined"
+                                fullWidth={isMobile}
+                                onClick={() => navigate("/barcode-ticket?type=incoming")}
+                                sx={{ minWidth: { xs: "100%", sm: 220 } }}
+                            >
+                                Código de barras
+                            </Button>
 
-                        <Button
-                            disabled={busy}
-                            variant="outlined"
-                            onClick={() => navigate("/barcode-camera?type=incoming")}
-                            sx={{ minWidth: 220 }}
-                        >
-                            Escanear con cámara
-                        </Button>
+                            <Button
+                                disabled={busy}
+                                variant="outlined"
+                                fullWidth={isMobile}
+                                onClick={() => navigate("/barcode-camera?type=incoming")}
+                                sx={{ minWidth: { xs: "100%", sm: 220 } }}
+                            >
+                                Escanear con cámara
+                            </Button>
 
-                        <Button
-                            disabled={busy}
-                            variant="contained"
-                            onClick={submit}
-                            sx={{ minWidth: 200 }}
-                        >
-                            Registrar entrada
-                        </Button>
-                    </Box>
+                            <Button
+                                disabled={busy}
+                                variant="contained"
+                                fullWidth={isMobile}
+                                onClick={submit}
+                                size={isMobile ? "large" : "medium"}
+                                sx={{ minWidth: { xs: "100%", sm: 200 } }}
+                            >
+                                Registrar entrada
+                            </Button>
+                        </Stack>
+                    </Stack>
                 </CardContent>
             </Card>
 
-            {/* BLOQUE INFERIOR: ahora SOLO albaranes pendientes ocupando todo el ancho */}
             <Box mt={2}>
                 <Suspense fallback={<Paper sx={{ p: 2 }}>Cargando albaranes…</Paper>}>
                     <PendingAlbaranesPanel type="incoming" sessionKey={getSessionKey()} />
@@ -325,3 +355,4 @@ export default function CajaEntrada() {
         </Box>
     );
 }
+

@@ -13,7 +13,10 @@ import {
     Paper,
     FormControl,
     InputLabel,
-    Select
+    Select,
+    Stack,
+    useMediaQuery,
+    useTheme,
 } from "@mui/material";
 import Autocomplete from "@mui/material/Autocomplete";
 import { useNavigate } from "react-router-dom";
@@ -30,6 +33,8 @@ const UNITS = ["unidad", "kg"];
 
 export default function CajaSalida() {
     const navigate = useNavigate();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
     const [catalog, setCatalog] = useState<Product[]>([]);
     const [sku, setSku] = useState<string>("");
@@ -74,7 +79,7 @@ export default function CajaSalida() {
         } catch (err) {
             setMsg({
                 type: "error",
-                text: "No se pudo leer la báscula"
+                text: "No se pudo leer la báscula",
             });
             setSnackOpen(true);
         } finally {
@@ -84,12 +89,18 @@ export default function CajaSalida() {
 
     const send = async () => {
         try {
+            if (!sku) {
+                setMsg({ type: "error", text: "Selecciona un producto" });
+                setSnackOpen(true);
+                return;
+            }
+
             setBusy(true);
             const body = {
                 sku,
                 qty: normalizeQty(qty),
                 unit,
-                order_ref: note || undefined
+                order_ref: note || undefined,
             };
             await api.post("/outgoing", body);
 
@@ -100,7 +111,7 @@ export default function CajaSalida() {
         } catch (e: any) {
             setMsg({
                 type: "error",
-                text: e?.response?.data?.detail || "Error al registrar salida"
+                text: e?.response?.data?.detail || "Error al registrar salida",
             });
             setSnackOpen(true);
         } finally {
@@ -109,7 +120,7 @@ export default function CajaSalida() {
     };
 
     return (
-        <Box sx={{ p: 2 }}>
+        <Box sx={{ p: { xs: 1, sm: 2 } }}>
             {msg && (
                 <Box mb={2}>
                     <Alert
@@ -123,14 +134,16 @@ export default function CajaSalida() {
                 </Box>
             )}
 
-            {/* CARD PRINCIPAL — Igual que ENTRADA */}
             <Card>
-                <CardContent>
-                    {/* === GRID PRINCIPAL === */}
+                <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
+                    {/* === GRID PRINCIPAL (responsive) === */}
                     <Box
                         display="grid"
-                        gridTemplateColumns="1.8fr 0.8fr 0.8fr 1.8fr"
-                        gap={2}
+                        gridTemplateColumns={{
+                            xs: "1fr",
+                            sm: "1.8fr 0.8fr 0.8fr 1.8fr",
+                        }}
+                        gap={{ xs: 1.5, sm: 2 }}
                         alignItems="center"
                     >
                         {/* PRODUCTO */}
@@ -148,7 +161,11 @@ export default function CajaSalida() {
                             isOptionEqualToValue={(o, v) => o?.sku === v?.sku}
                             getOptionLabel={(o) => (o ? `${o.sku} — ${o.name}` : "")}
                             renderInput={(params) => (
-                                <TextField {...params} label="Producto (buscar)" />
+                                <TextField
+                                    {...params}
+                                    label="Producto (buscar)"
+                                    size={isMobile ? "small" : "medium"}
+                                />
                             )}
                         />
 
@@ -159,10 +176,11 @@ export default function CajaSalida() {
                             inputProps={{ step, min: 0 }}
                             value={qty}
                             onChange={(e) => setQty(normalizeQty(Number(e.target.value)))}
+                            size={isMobile ? "small" : "medium"}
                         />
 
                         {/* UNIDAD */}
-                        <FormControl>
+                        <FormControl size={isMobile ? "small" : "medium"}>
                             <InputLabel id="unit-label">Unidad</InputLabel>
                             <Select
                                 labelId="unit-label"
@@ -184,69 +202,90 @@ export default function CajaSalida() {
                             value={note}
                             onChange={(e) => setNote(e.target.value)}
                             placeholder="Observaciones"
+                            size={isMobile ? "small" : "medium"}
                         />
                     </Box>
 
-                    {/* === FILA SECUNDARIA === */}
-                    <Box display="flex" alignItems="center" gap={2} mt={2}>
-                        <FormControlLabel
-                            control={
-                                <Switch
-                                    checked={useScale}
-                                    onChange={(e) => setUseScale(e.target.checked)}
-                                />
-                            }
-                            label="Usar báscula"
-                        />
-
-                        <Button
-                            variant="outlined"
-                            disabled={!useScale || busy}
-                            onClick={readScale}
+                    {/* === FILA SECUNDARIA (responsive) === */}
+                    <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={{ xs: 1.25, sm: 2 }}
+                        alignItems={{ xs: "stretch", sm: "center" }}
+                        mt={2}
+                    >
+                        <Stack
+                            direction="row"
+                            spacing={1}
+                            alignItems="center"
+                            flexWrap="wrap"
+                            useFlexGap
                         >
-                            Leer báscula
-                        </Button>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={useScale}
+                                        onChange={(e) => setUseScale(e.target.checked)}
+                                    />
+                                }
+                                label="Usar báscula"
+                            />
+
+                            <Button
+                                variant="outlined"
+                                disabled={!useScale || busy}
+                                onClick={readScale}
+                            >
+                                Leer báscula
+                            </Button>
+                        </Stack>
 
                         <Box flex={1} />
 
-                        {/* ✅ NUEVO: Barcode */}
-                        <Button
-                            variant="outlined"
-                            disabled={busy}
-                            onClick={() => navigate("/barcode-ticket?type=outgoing")}
-                            sx={{ minWidth: 220 }}
+                        {/* BOTONES: móvil en columna fullWidth */}
+                        <Stack
+                            direction={{ xs: "column", sm: "row" }}
+                            spacing={1}
+                            sx={{ width: { xs: "100%", sm: "auto" } }}
                         >
-                            Código de barras
-                        </Button>
+                            <Button
+                                variant="outlined"
+                                disabled={busy}
+                                fullWidth={isMobile}
+                                onClick={() => navigate("/barcode-ticket?type=outgoing")}
+                                sx={{ minWidth: { xs: "100%", sm: 220 } }}
+                            >
+                                Código de barras
+                            </Button>
 
-                        <Button
-                            variant="outlined"
-                            disabled={busy}
-                            onClick={() => navigate("/barcode-camera?type=outgoing")}
-                            sx={{ minWidth: 220 }}
-                        >
-                            Escanear con cámara
-                        </Button>
+                            <Button
+                                variant="outlined"
+                                disabled={busy}
+                                fullWidth={isMobile}
+                                onClick={() => navigate("/barcode-camera?type=outgoing")}
+                                sx={{ minWidth: { xs: "100%", sm: 220 } }}
+                            >
+                                Escanear con cámara
+                            </Button>
 
-                        <Button
-                            variant="contained"
-                            disabled={!sku || busy}
-                            onClick={send}
-                            sx={{ minWidth: 200 }}
-                        >
-                            Registrar salida
-                        </Button>
-                    </Box>
+                            <Button
+                                variant="contained"
+                                disabled={!sku || busy}
+                                fullWidth={isMobile}
+                                onClick={send}
+                                size={isMobile ? "large" : "medium"}
+                                sx={{ minWidth: { xs: "100%", sm: 200 } }}
+                            >
+                                Registrar salida
+                            </Button>
+                        </Stack>
+                    </Stack>
                 </CardContent>
             </Card>
 
-            {/* === BLOQUE INFERIOR — Albaranes de VENTA pendientes a lo ancho === */}
+            {/* === BLOQUE INFERIOR — Albaranes pendientes === */}
             <Box mt={3}>
                 <Suspense fallback={<Paper sx={{ p: 2 }}>Cargando albaranes…</Paper>}>
-                    <PendingAlbaranesPanel
-                        type="outgoing"
-                        sessionKey={getSessionKey()}
-                    />
+                    <PendingAlbaranesPanel type="outgoing" sessionKey={getSessionKey()} />
                 </Suspense>
             </Box>
 
@@ -262,4 +301,5 @@ export default function CajaSalida() {
         </Box>
     );
 }
+
 
