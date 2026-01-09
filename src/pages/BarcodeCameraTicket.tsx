@@ -186,9 +186,9 @@ export default function BarcodeCameraTicket() {
             setBusy(true);
             setError(null);
 
-            const commitRes = await api.post("/albaranes/commit", {
-                type,
-                origin: "camera",
+            await api.post("/bulk", {
+                type, // "incoming" | "outgoing"
+                origin: "scan",
                 items: lines.map((l) => ({
                     sku: l.sku,
                     qty: l.qty,
@@ -196,22 +196,18 @@ export default function BarcodeCameraTicket() {
                 })),
             });
 
-            const albaranId = commitRes.data?.id;
-            if (!albaranId) throw new Error("No se pudo crear el albarán");
-
-            await api.post(`/albaranes/${albaranId}/apply`);
-
             navigate(-1);
         } catch (e: any) {
             const msg =
                 e?.response?.data?.detail ||
                 e?.response?.data?.message ||
-                "Error confirmando ticket";
+                "Error aplicando ticket";
             setError(String(msg));
         } finally {
             setBusy(false);
         }
     };
+
 
     return (
         <Box>
