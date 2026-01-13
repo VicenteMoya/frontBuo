@@ -10,17 +10,18 @@ import {
     ToggleButton,
 } from "@mui/material";
 import api from "../api/axios";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 import type { OcrResult } from "../api/types.ts";
-import { getSessionKey } from '../utils/sessionKey';
+import { getSessionKey } from "../utils/sessionKey";
 
 export default function OCRAlbaran() {
     const [file, setFile] = useState<File | null>(null);
-    const [msg, setMsg] = useState<{ type: "success" | "error" | "info", text: string } | null>(null);
+    const [msg, setMsg] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
     const [busy, setBusy] = useState(false);
 
-    const [ocrType, setOcrType] =
-        useState<"cash_unide" | "villar_munoz" | "whatsapp">("cash_unide");
+    const [ocrType, setOcrType] = useState<
+        "cash_unide" | "villar_munoz" | "whatsapp" | "del_espino"
+    >("cash_unide");
 
     const nav = useNavigate();
 
@@ -31,6 +32,7 @@ export default function OCRAlbaran() {
         }
         setBusy(true);
         setMsg(null);
+
         try {
             const fd = new FormData();
             fd.append("file", file);
@@ -38,7 +40,7 @@ export default function OCRAlbaran() {
             fd.append("ocr_type", ocrType);
 
             const r = await api.post("/albaranes/ocr", fd, {
-                headers: { "Content-Type": "multipart/form-data" }
+                headers: { "Content-Type": "multipart/form-data" },
             });
 
             const data = (r?.data || {}) as OcrResult;
@@ -50,12 +52,12 @@ export default function OCRAlbaran() {
                 setMsg({ type: "success", text: `Analizado. Items: ${items.length}` });
             }
 
-            nav('/ocr/review', {
+            nav("/ocr/review", {
                 state: {
                     ocr: { items: data.items },
                     sourceImageName: file.name,
                     albaranId: data.id,
-                }
+                },
             });
         } catch (e: any) {
             console.error(e?.response?.data || e);
@@ -72,11 +74,7 @@ export default function OCRAlbaran() {
                     <Typography variant="h6">OCR de Albarán</Typography>
 
                     {msg && (
-                        <Alert
-                            severity={msg.type}
-                            onClose={() => setMsg(null)}
-                            sx={{ mt: 2 }}
-                        >
+                        <Alert severity={msg.type} onClose={() => setMsg(null)} sx={{ mt: 2 }}>
                             {msg.text}
                         </Alert>
                     )}
@@ -126,6 +124,22 @@ export default function OCRAlbaran() {
                                     Villar Muñoz
                                 </ToggleButton>
 
+                                {/* 🟣 DEL ESPINO */}
+                                <ToggleButton
+                                    value="del_espino"
+                                    sx={{
+                                        color: "#7b1fa2",
+                                        borderColor: "#7b1fa2",
+                                        "&.Mui-selected": {
+                                            backgroundColor: "#7b1fa2",
+                                            color: "#fff",
+                                            "&:hover": { backgroundColor: "#4a148c" },
+                                        },
+                                    }}
+                                >
+                                    Del Espino
+                                </ToggleButton>
+
                                 {/* 🟢 WHATSAPP */}
                                 <ToggleButton
                                     value="whatsapp"
@@ -144,10 +158,7 @@ export default function OCRAlbaran() {
                             </ToggleButtonGroup>
 
                             {/* BOTÓN MANUAL */}
-                            <Button
-                                variant="outlined"
-                                onClick={() => nav("/ocr/review2")}
-                            >
+                            <Button variant="outlined" onClick={() => nav("/ocr/review2")}>
                                 MANUAL
                             </Button>
                         </Box>
@@ -163,11 +174,7 @@ export default function OCRAlbaran() {
                     </Box>
 
                     <Box sx={{ mt: 2 }}>
-                        <Button
-                            variant="contained"
-                            disabled={!file || busy}
-                            onClick={onUpload}
-                        >
+                        <Button variant="contained" disabled={!file || busy} onClick={onUpload}>
                             Analizar
                         </Button>
                     </Box>
