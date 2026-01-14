@@ -20,7 +20,7 @@ export default function OCRAlbaran() {
     const [busy, setBusy] = useState(false);
 
     const [ocrType, setOcrType] = useState<
-        "cash_unide" | "villar_munoz" | "whatsapp" | "del_espino"
+        "cash_unide" | "del_espino" | "quesos_solana"
     >("cash_unide");
 
     const nav = useNavigate();
@@ -57,6 +57,7 @@ export default function OCRAlbaran() {
                     ocr: { items: data.items },
                     sourceImageName: file.name,
                     albaranId: data.id,
+                    ocrType,
                 },
             });
         } catch (e: any) {
@@ -108,22 +109,6 @@ export default function OCRAlbaran() {
                                     Cash Unide
                                 </ToggleButton>
 
-                                {/* 🟡 VILLAR MUÑOZ */}
-                                <ToggleButton
-                                    value="villar_munoz"
-                                    sx={{
-                                        color: "#f9a825",
-                                        borderColor: "#f9a825",
-                                        "&.Mui-selected": {
-                                            backgroundColor: "#f9a825",
-                                            color: "#000",
-                                            "&:hover": { backgroundColor: "#c17900" },
-                                        },
-                                    }}
-                                >
-                                    Villar Muñoz
-                                </ToggleButton>
-
                                 {/* 🟣 DEL ESPINO */}
                                 <ToggleButton
                                     value="del_espino"
@@ -140,20 +125,20 @@ export default function OCRAlbaran() {
                                     Del Espino
                                 </ToggleButton>
 
-                                {/* 🟢 WHATSAPP */}
+                                {/* 🟤 QUESOS LA SOLANA */}
                                 <ToggleButton
-                                    value="whatsapp"
+                                    value="quesos_solana"
                                     sx={{
-                                        color: "#2e7d32",
-                                        borderColor: "#2e7d32",
+                                        color: "#6d4c41",
+                                        borderColor: "#6d4c41",
                                         "&.Mui-selected": {
-                                            backgroundColor: "#2e7d32",
+                                            backgroundColor: "#6d4c41",
                                             color: "#fff",
-                                            "&:hover": { backgroundColor: "#1b5e20" },
+                                            "&:hover": { backgroundColor: "#4e342e" },
                                         },
                                     }}
                                 >
-                                    WhatsApp
+                                    Quesos La Solana
                                 </ToggleButton>
                             </ToggleButtonGroup>
 
@@ -183,3 +168,4 @@ export default function OCRAlbaran() {
         </Box>
     );
 }
+
