@@ -6,6 +6,7 @@ export type AlbaranStatus = 'pending' | 'completed';
 export type AlbaranLine = {
     id?: number;
     sku: string;
+    name?: string | null; // ✅ NUEVO
     qty: number;
     unit: string;
     note?: string | null;
@@ -40,6 +41,7 @@ export type AlbaranDetail = AlbaranPending;
 function normalizeLine(raw: any): AlbaranLine {
     return {
         sku: raw.sku,
+        name: raw.name ?? null, // ✅ NUEVO
         qty: Number(raw.qty),
         unit: raw.unit,
         note: raw.note ?? null,
@@ -117,3 +119,4 @@ export function assignOCRAlbaran(
         { validateStatus: (status) => status >= 200 && status < 300 }
     );
 }
+

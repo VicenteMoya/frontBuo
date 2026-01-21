@@ -19,7 +19,6 @@ import {
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import api from '../api/axios';
 import {
     fetchPending,
     completeAlbaran,
@@ -196,6 +195,7 @@ export default function PendingAlbaranesPanel({ type, sessionKey }: Props) {
                                             <TableHead>
                                                 <TableRow>
                                                     <TableCell>SKU</TableCell>
+                                                    <TableCell>Producto</TableCell>
                                                     <TableCell align="right">Cantidad</TableCell>
                                                     <TableCell>Unidad</TableCell>
                                                     <TableCell>Nota</TableCell>
@@ -205,6 +205,15 @@ export default function PendingAlbaranesPanel({ type, sessionKey }: Props) {
                                                 {r.lines.map((ln, i) => (
                                                     <TableRow key={i}>
                                                         <TableCell>{ln.sku}</TableCell>
+
+                                                        <TableCell sx={{ maxWidth: 420 }}>
+                                                            {ln.name && String(ln.name).trim().length > 0
+                                                                ? ln.name
+                                                                : <Typography variant="caption" color="text.secondary">
+                                                                    (sin nombre)
+                                                                </Typography>}
+                                                        </TableCell>
+
                                                         <TableCell align="right">{ln.qty}</TableCell>
                                                         <TableCell>{ln.unit}</TableCell>
                                                         <TableCell>{ln.note || "-"}</TableCell>
@@ -234,3 +243,4 @@ export default function PendingAlbaranesPanel({ type, sessionKey }: Props) {
         </Paper>
     );
 }
+
