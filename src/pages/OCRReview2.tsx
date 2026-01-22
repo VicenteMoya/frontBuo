@@ -27,12 +27,30 @@ import { commitOCRAlbaran } from "../api/albaranes";
 const UNITS = ["unidad", "kg", "caja", "litro"];
 type Product = { sku: string; name: string; unit?: string };
 
+// ✅ Lista de locales (tal cual la has pedido)
+const LOCALES = [
+    "La Buha Latina",
+    "El Buo Latina",
+    "La Buha Chueca",
+    "El Buo Chueca",
+    "Ciudad Real Plaza Mayor",
+    "Ciudad Real el Torreón",
+    "Murcia",
+    "El Corregidor Almagro",
+    "Puertollano",
+    "Albacete",
+    "Hellín",
+    "Valdepeñas",
+];
+
 export default function OCRReview2() {
     const nav = useNavigate();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-    const [fileName, setFileName] = useState<string>("MANUAL");
+    // ✅ Antes: fileName (texto libre). Ahora: local (select)
+    const [local, setLocal] = useState<string>("");
+
     const [items, setItems] = useState<OcrItem[]>([
         { sku: "", name: "", qty: 1, unit: "unidad" } as OcrItem,
     ]);
@@ -56,12 +74,21 @@ export default function OCRReview2() {
     const addEmpty = () =>
         setItems((prev) => [...prev, { sku: "", name: "", qty: 1, unit: "unidad" } as OcrItem]);
 
-    const canSubmit = useMemo(
-        () => items.length > 0 && items.every((it) => it.qty > 0 && (it.sku || it.name.trim().length > 1)),
-        [items]
-    );
+    const canSubmit = useMemo(() => {
+        const linesOk =
+            items.length > 0 &&
+            items.every((it) => it.qty > 0 && (it.sku || it.name.trim().length > 1));
+
+        // ✅ obligamos a seleccionar local también
+        return linesOk && local.trim().length > 0;
+    }, [items, local]);
 
     const submit = async () => {
+        if (!local.trim()) {
+            setSnack({ open: true, sev: "error", msg: "Selecciona un local." });
+            return;
+        }
+
         const lines = items
             .filter((it) => it.sku || it.name)
             .map((it) => ({
@@ -80,7 +107,9 @@ export default function OCRReview2() {
             await commitOCRAlbaran({
                 type,
                 origin: "manual",
-                sourceImageName: fileName,
+                // ✅ esto es lo que luego ves en pendientes como “sourceImageName”
+                // y por tanto es lo que verá el admin como “de dónde es”
+                sourceImageName: local,
                 items: lines,
             });
             setSnack({ open: true, sev: "success", msg: "Pedido manual guardado como pendiente." });
@@ -111,7 +140,7 @@ export default function OCRReview2() {
                         </Button>
                     </Stack>
 
-                    {/* Tipo + Referencia */}
+                    {/* Tipo + Local */}
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
                         <TextField
                             select
@@ -125,13 +154,21 @@ export default function OCRReview2() {
                             <MenuItem value="outgoing">Salida</MenuItem>
                         </TextField>
 
+                        {/* ✅ Antes: "Referencia" texto libre. Ahora: "Local" select */}
                         <TextField
+                            select
                             size={isMobile ? "small" : "small"}
-                            label="Referencia"
-                            value={fileName}
-                            onChange={(e) => setFileName(e.target.value)}
+                            label="Local"
+                            value={local}
+                            onChange={(e) => setLocal(e.target.value)}
                             fullWidth
-                        />
+                        >
+                            {LOCALES.map((l) => (
+                                <MenuItem key={l} value={l}>
+                                    {l}
+                                </MenuItem>
+                            ))}
+                        </TextField>
                     </Stack>
 
                     <Divider />
@@ -299,3 +336,4 @@ function matchSkuByName(catalog: Product[], name: string): string | undefined {
     const hit = catalog.find((p) => p.name.toLowerCase().includes(n) || n.includes(p.name.toLowerCase()));
     return hit?.sku;
 }
+
