@@ -23,18 +23,19 @@ import AddIcon from "@mui/icons-material/Add";
 import Autocomplete from "@mui/material/Autocomplete";
 import type { OcrItem } from "../api/types";
 import { commitOCRAlbaran } from "../api/albaranes";
+import { useAuth } from "../auth/AuthContext";
 
 const UNITS = ["unidad", "kg", "caja", "litro"];
 type Product = { sku: string; name: string; unit?: string };
 
-// ✅ Lista de locales (tal cual la has pedido)
+// ✅ Lista de locales
 const LOCALES = [
     "La Buha Latina",
     "El Buo Latina",
     "La Buha Chueca",
     "El Buo Chueca",
     "Ciudad Real Plaza Mayor",
-    "Ciudad Real el Torreón",
+    "Ciudad Reak ek Torreón",
     "Murcia",
     "El Corregidor Almagro",
     "Puertollano",
@@ -47,8 +48,12 @@ export default function OCRReview2() {
     const nav = useNavigate();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+    const { role } = useAuth();
 
-    // ✅ Antes: fileName (texto libre). Ahora: local (select)
+    // ✅ modo kiosco para pedido_only
+    const isPedidoOnly = role === "pedido_only";
+
+    // ✅ Antes: fileName. Ahora: local (select)
     const [local, setLocal] = useState<string>("");
 
     const [items, setItems] = useState<OcrItem[]>([
@@ -74,14 +79,13 @@ export default function OCRReview2() {
     const addEmpty = () =>
         setItems((prev) => [...prev, { sku: "", name: "", qty: 1, unit: "unidad" } as OcrItem]);
 
-    const canSubmit = useMemo(() => {
-        const linesOk =
+    const canSubmit = useMemo(
+        () =>
+            local.trim().length > 0 &&
             items.length > 0 &&
-            items.every((it) => it.qty > 0 && (it.sku || it.name.trim().length > 1));
-
-        // ✅ obligamos a seleccionar local también
-        return linesOk && local.trim().length > 0;
-    }, [items, local]);
+            items.every((it) => it.qty > 0 && (it.sku || it.name.trim().length > 1)),
+        [items, local]
+    );
 
     const submit = async () => {
         if (!local.trim()) {
@@ -107,13 +111,22 @@ export default function OCRReview2() {
             await commitOCRAlbaran({
                 type,
                 origin: "manual",
-                // ✅ esto es lo que luego ves en pendientes como “sourceImageName”
-                // y por tanto es lo que verá el admin como “de dónde es”
+                // ✅ Esto se ve en pendientes como “sourceImageName”
                 sourceImageName: local,
                 items: lines,
             });
+
             setSnack({ open: true, sev: "success", msg: "Pedido manual guardado como pendiente." });
-            setTimeout(() => nav("/ocr"), 1000);
+
+            // ✅ Si es pedido_only, se queda aquí SIEMPRE
+            if (isPedidoOnly) {
+                // resetea el formulario pero mantén el local si quieres (yo lo mantengo)
+                setItems([{ sku: "", name: "", qty: 1, unit: "unidad" } as OcrItem]);
+                return;
+            }
+
+            // resto de roles: vuelve a /ocr como antes
+            setTimeout(() => nav("/ocr"), 800);
         } catch (e: any) {
             const detail = e?.response?.data?.detail;
             const text = typeof detail === "string" ? detail : JSON.stringify(detail);
@@ -135,9 +148,12 @@ export default function OCRReview2() {
                             Pedido manual
                         </Typography>
 
-                        <Button variant="outlined" onClick={() => nav("/ocr")} fullWidth={isMobile}>
-                            ← Atrás
-                        </Button>
+                        {/* ✅ pedido_only: NO mostramos “Atrás” */}
+                        {!isPedidoOnly && (
+                            <Button variant="outlined" onClick={() => nav("/ocr")} fullWidth={isMobile}>
+                                ← Atrás
+                            </Button>
+                        )}
                     </Stack>
 
                     {/* Tipo + Local */}
@@ -154,7 +170,6 @@ export default function OCRReview2() {
                             <MenuItem value="outgoing">Salida</MenuItem>
                         </TextField>
 
-                        {/* ✅ Antes: "Referencia" texto libre. Ahora: "Local" select */}
                         <TextField
                             select
                             size={isMobile ? "small" : "small"}
@@ -230,6 +245,7 @@ export default function OCRReview2() {
                                                 onClick={() => remove(idx)}
                                                 fullWidth
                                                 startIcon={<DeleteIcon />}
+                                                disabled={items.length === 1}
                                             >
                                                 Eliminar línea
                                             </Button>
@@ -285,7 +301,11 @@ export default function OCRReview2() {
                                         value={it.note ?? ""}
                                         onChange={(e) => handleChange(idx, { note: e.target.value })}
                                     />
-                                    <IconButton color="error" onClick={() => remove(idx)}>
+                                    <IconButton
+                                        color="error"
+                                        onClick={() => remove(idx)}
+                                        disabled={items.length === 1}
+                                    >
                                         <DeleteIcon />
                                     </IconButton>
                                 </Box>
@@ -300,7 +320,6 @@ export default function OCRReview2() {
                             variant="outlined"
                             onClick={addEmpty}
                             fullWidth={isMobile}
-                            _show={"true"}
                         >
                             Añadir línea
                         </Button>
@@ -320,7 +339,7 @@ export default function OCRReview2() {
 
             <Snackbar
                 open={snack.open}
-                autoHideDuration={3000}
+                autoHideDuration={2500}
                 onClose={() => setSnack((s) => ({ ...s, open: false }))}
             >
                 <Alert severity={snack.sev} onClose={() => setSnack((s) => ({ ...s, open: false }))}>

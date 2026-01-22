@@ -40,30 +40,28 @@ const Layout: React.FC<{ children: React.ReactNode; title?: string }> = ({ child
 
     const isPath = (path: string) => loc.pathname === path;
 
-    // ✅ Guardia de navegación para pedido_only
+    const isPedidoOnly = role === "pedido_only";
+
+    // ✅ Guardia de navegación modo kiosco: pedido_only SOLO puede estar en /ocr/review2 (y /login)
     useEffect(() => {
-        if (role === "pedido_only") {
-            const path = loc.pathname;
+        if (!isPedidoOnly) return;
 
-            const allowed =
-                path === "/ocr" ||
-                path === "/ocr/review" ||
-                path === "/ocr/review2" ||
-                path === "/login";
+        const path = loc.pathname;
 
-            if (!allowed) {
-                nav("/ocr", { replace: true });
-            }
+        const allowed =
+            path === "/ocr/review2" ||
+            path === "/login";
+
+        if (!allowed) {
+            nav("/ocr/review2", { replace: true });
         }
-    }, [role, loc.pathname, nav]);
+    }, [isPedidoOnly, loc.pathname, nav]);
 
     // Cierra drawer al cambiar de ruta (móvil)
     useEffect(() => {
         if (drawerOpen) setDrawerOpen(false);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loc.pathname]);
-
-    const isPedidoOnly = role === "pedido_only";
 
     const topButtonStyle = useMemo(
         () => ({
@@ -86,11 +84,9 @@ const Layout: React.FC<{ children: React.ReactNode; title?: string }> = ({ child
     );
 
     const menuItems = useMemo(() => {
-        if (isPedidoOnly) {
-            return [
-                { label: "REALIZAR PEDIDO", path: "/ocr" },
-            ];
-        }
+        // ✅ pedido_only: sin navegación (kiosco)
+        if (isPedidoOnly) return [];
+
         return [
             { label: "ENTRADA 📥", path: "/" },
             { label: "REALIZAR PEDIDO ✍🏻", path: "/ocr" },
@@ -103,48 +99,38 @@ const Layout: React.FC<{ children: React.ReactNode; title?: string }> = ({ child
     const drawer = (
         <Box sx={{ width: 280 }}>
             <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1 }}>
-                <Box
-                    component="img"
-                    src={logoBuo}
-                    alt="Logo Buo"
-                    sx={{ height: 38 }}
-                />
-                <Box
-                    component="img"
-                    src={logoGroupymes}
-                    alt="Logo Groupymes"
-                    sx={{ height: 42 }}
-                />
+                <Box component="img" src={logoBuo} alt="Logo Buo" sx={{ height: 38 }} />
+                <Box component="img" src={logoGroupymes} alt="Logo Groupymes" sx={{ height: 42 }} />
             </Box>
 
             <Divider />
 
-            <List sx={{ p: 0 }}>
-                {menuItems.map((it) => (
-                    <ListItem key={it.path} disablePadding>
-                        <ListItemButton
-                            selected={isPath(it.path)}
-                            onClick={() => nav(it.path)}
-                            sx={{
-                                py: 1.5,
-                                "&.Mui-selected": {
-                                    backgroundColor: "rgba(138, 0, 24, 0.10)",
-                                },
-                            }}
-                        >
-                            <ListItemText
-                                primary={
-                                    <Typography fontWeight={700}>
-                                        {it.label}
-                                    </Typography>
-                                }
-                            />
-                        </ListItemButton>
-                    </ListItem>
-                ))}
-            </List>
+            {/* ✅ pedido_only: ocultamos lista de navegación */}
+            {!isPedidoOnly && (
+                <List sx={{ p: 0 }}>
+                    {menuItems.map((it) => (
+                        <ListItem key={it.path} disablePadding>
+                            <ListItemButton
+                                selected={isPath(it.path)}
+                                onClick={() => nav(it.path)}
+                                sx={{
+                                    py: 1.5,
+                                    "&.Mui-selected": {
+                                        backgroundColor: "rgba(138, 0, 24, 0.10)",
+                                    },
+                                }}
+                            >
+                                <ListItemText
+                                    primary={<Typography fontWeight={700}>{it.label}</Typography>}
+                                />
+                            </ListItemButton>
+                        </ListItem>
+                    ))}
+                </List>
+            )}
 
-            <Divider />
+            {/* Si no hay items, no metemos un divider “vacío” */}
+            {!isPedidoOnly && <Divider />}
 
             <Box sx={{ p: 2 }}>
                 <Button
@@ -195,8 +181,9 @@ const Layout: React.FC<{ children: React.ReactNode; title?: string }> = ({ child
                         />
                     </Box>
 
-                    {/* DERECHA: móvil => hamburger; desktop => botones */}
+                    {/* DERECHA */}
                     {isMobile ? (
+                        // ✅ móvil: dejamos el drawer para que tenga “Cerrar sesión”
                         <IconButton
                             onClick={() => setDrawerOpen(true)}
                             aria-label="Abrir menú"
@@ -206,6 +193,7 @@ const Layout: React.FC<{ children: React.ReactNode; title?: string }> = ({ child
                         </IconButton>
                     ) : (
                         <Box sx={{ display: "flex", alignItems: "center" }}>
+                            {/* ✅ pedido_only: NO mostramos navegación */}
                             {!isPedidoOnly && (
                                 <>
                                     <Button sx={topButtonStyle} onClick={() => nav("/")} disabled={isPath("/")}>
@@ -238,12 +226,7 @@ const Layout: React.FC<{ children: React.ReactNode; title?: string }> = ({ child
                                 </>
                             )}
 
-                            {isPedidoOnly && (
-                                <Button sx={topButtonStyle} onClick={() => nav("/ocr")} disabled={isPath("/ocr")}>
-                                    REALIZAR PEDIDO
-                                </Button>
-                            )}
-
+                            {/* ✅ siempre disponible */}
                             <Button sx={topButtonStyle} onClick={handleLogout}>
                                 CERRAR SESIÓN
                             </Button>
@@ -257,7 +240,7 @@ const Layout: React.FC<{ children: React.ReactNode; title?: string }> = ({ child
                 anchor="right"
                 open={drawerOpen}
                 onClose={() => setDrawerOpen(false)}
-                ModalProps={{ keepMounted: true }} // mejora rendimiento en móvil
+                ModalProps={{ keepMounted: true }}
             >
                 {drawer}
             </Drawer>

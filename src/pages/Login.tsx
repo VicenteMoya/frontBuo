@@ -40,12 +40,14 @@ export default function Login() {
             let r = await api.post("/auth/login", { username, password });
 
             const token = r.data?.access_token || r.data?.token;
-            const role = r.data?.user?.role; // 👈 NUEVO
+            const role = r.data?.user?.role;
 
             if (!token) throw new Error("No se recibió el token");
 
-            login(token, role); // 👈 CAMBIO CLAVE
-            nav(role === "pedido_only" ? "/ocr" : "/", { replace: true }); // 👈 REDIRECCIÓN
+            login(token, role);
+
+            // ✅ pedido_only -> SIEMPRE a /ocr/review2
+            nav(role === "pedido_only" ? "/ocr/review2" : "/", { replace: true });
         } catch (err: any) {
             if (err?.response?.status === 422) {
                 try {
@@ -57,12 +59,14 @@ export default function Login() {
                     });
 
                     const token = r2.data?.access_token || r2.data?.token;
-                    const role = r2.data?.user?.role; // 👈 TAMBIÉN AQUÍ
+                    const role = r2.data?.user?.role;
 
                     if (!token) throw new Error("No se recibió el token");
 
                     login(token, role);
-                    nav(role === "pedido_only" ? "/ocr" : "/", { replace: true });
+
+                    // ✅ también aquí
+                    nav(role === "pedido_only" ? "/ocr/review2" : "/", { replace: true });
                     return;
                 } catch (err2: any) {
                     setMsg(extractErrorMessage(err2));
